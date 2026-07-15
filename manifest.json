@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "StayTube Listing Details",
+  "version": "1.0.2",
+  "description": "Adds clickable channels and exact local publication times to YouTube listings and playing videos.",
+  "permissions": [
+    "clipboardWrite"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://m.youtube.com/*"
+      ],
+      "js": [
+        "src/core.js",
+        "src/content.js"
+      ],
+      "css": [
+        "src/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

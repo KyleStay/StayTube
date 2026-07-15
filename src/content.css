@@ -1,0 +1,213 @@
+.staytube-listing-details {
+  align-items: center;
+  color: var(--yt-spec-text-secondary, #606060);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 400;
+  gap: 0.35em;
+  line-height: 1.6rem;
+  margin-top: 0.1rem;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.staytube-listing-details:empty {
+  display: none;
+}
+
+/* Modern History rows use a horizontal lockup. Keep the added publication
+   time in the same text column as YouTube's title and metadata. */
+yt-lockup-view-model .ytLockupMetadataViewModelTextContainer > .staytube-listing-details {
+  margin-top: 0.2rem;
+}
+
+.staytube-channel {
+  color: inherit;
+  display: inline-block;
+  max-width: min(22rem, 100%);
+  overflow: hidden;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staytube-channel:hover,
+.staytube-channel:focus-visible {
+  color: var(--yt-spec-text-primary, #0f0f0f);
+  text-decoration: underline;
+}
+
+.staytube-published,
+.staytube-unavailable {
+  white-space: normal;
+}
+
+.staytube-published-after-channel::before {
+  content: "\00a0";
+}
+
+.staytube-unavailable {
+  opacity: 0.72;
+}
+
+.staytube-native-published {
+  color: inherit;
+  font: inherit;
+}
+
+.staytube-watch-published {
+  color: inherit;
+  font: inherit;
+  margin-inline-start: 0.4em;
+  white-space: nowrap;
+}
+
+.staytube-error {
+  font-style: italic;
+}
+
+html[dark],
+[dark] .staytube-listing-details {
+  color: var(--yt-spec-text-secondary, #aaa);
+}
+
+html[dark] .staytube-channel:hover,
+html[dark] .staytube-channel:focus-visible,
+[dark] .staytube-channel:hover,
+[dark] .staytube-channel:focus-visible {
+  color: var(--yt-spec-text-primary, #f1f1f1);
+}
+
+/* Editable playlist rows expose a drag handle. Put the destructive shortcut
+   beside YouTube's native action menu and delegate removal to that menu. */
+ytd-playlist-video-renderer > #menu {
+  align-items: center;
+  display: flex;
+}
+
+.staytube-playlist-remove {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--yt-spec-text-secondary, #606060);
+  cursor: pointer;
+  display: flex;
+  font: 300 28px/1 Arial, sans-serif;
+  height: 40px;
+  justify-content: center;
+  padding: 0 0 3px;
+  width: 40px;
+}
+
+.staytube-playlist-remove:hover,
+.staytube-playlist-remove:focus-visible {
+  background: var(--yt-spec-10-percent-layer, rgba(0, 0, 0, 0.1));
+  color: var(--yt-spec-text-primary, #0f0f0f);
+  outline: none;
+}
+
+.staytube-playlist-remove:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+html[dark] .staytube-playlist-remove {
+  color: var(--yt-spec-text-secondary, #aaa);
+}
+
+html[dark] .staytube-playlist-remove:is(:hover, :focus-visible) {
+  color: var(--yt-spec-text-primary, #f1f1f1);
+}
+
+/* Avoid flashing the intermediary native menu during the one-click action. */
+html.staytube-finding-remove-command ytd-popup-container {
+  opacity: 0;
+}
+
+.staytube-copy-transcript {
+  cursor: pointer;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.staytube-copy-transcript:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+
+/* YouTube clamps most listing titles to two lines. Keep the native typography
+   while allowing the complete title to wrap and grow the card vertically. */
+ytd-rich-item-renderer :is(#video-title, #video-title-link),
+ytd-rich-grid-media :is(#video-title, #video-title-link),
+ytd-video-renderer :is(#video-title, #video-title-link),
+ytd-grid-video-renderer :is(#video-title, #video-title-link),
+ytd-compact-video-renderer :is(#video-title, #video-title-link),
+ytd-playlist-video-renderer :is(#video-title, #video-title-link),
+ytd-playlist-panel-video-renderer :is(#video-title, #video-title-link),
+yt-lockup-view-model .ytLockupMetadataViewModelTitle,
+yt-lockup-view-model .ytLockupMetadataViewModelTitle .ytAttributedStringHost,
+ytm-video-with-context-renderer :is(#video-title, .media-item-headline),
+ytm-compact-video-renderer :is(#video-title, .media-item-headline),
+ytm-shorts-lockup-view-model :is(h3, [class*="Title"]) {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  -webkit-box-orient: initial !important;
+  -webkit-line-clamp: unset !important;
+}
+
+ytd-rich-item-renderer h3,
+ytd-rich-grid-media h3,
+ytd-video-renderer h3,
+ytd-grid-video-renderer h3,
+yt-lockup-view-model .ytLockupMetadataViewModelHeadingReset {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Surface YouTube's authenticated thumbnail actions on hover/focus, including
+   the native one-click Watch Later command, without suppressing other actions. */
+:is(yt-thumbnail-view-model, ytd-thumbnail):is(:hover, :focus-within)
+  yt-thumbnail-hover-overlay-toggle-actions-view-model {
+  display: flex !important;
+  opacity: 1 !important;
+  /* The action host covers the thumbnail. Let clicks pass through its empty
+     area to YouTube's video link and only capture clicks on real controls. */
+  pointer-events: none !important;
+  visibility: visible !important;
+}
+
+:is(yt-thumbnail-view-model, ytd-thumbnail)
+  yt-thumbnail-hover-overlay-toggle-actions-view-model
+  :is(button, a, [role="button"]) {
+  pointer-events: auto !important;
+}
+
+ytd-thumbnail:is(:hover, :focus-within) #hover-overlays {
+  opacity: 1 !important;
+  pointer-events: none !important;
+  visibility: visible !important;
+}
+
+
+ytd-thumbnail:is(:hover, :focus-within)
+  ytd-thumbnail-overlay-toggle-button-renderer:first-of-type {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+
+/* Shorts shelves use tighter cards than standard grid/list renderers. */
+ytd-reel-item-renderer .staytube-listing-details,
+ytd-reel-video-renderer .staytube-listing-details,
+ytm-shorts-lockup-view-model .staytube-listing-details {
+  font-size: 1.1rem;
+  line-height: 1.45rem;
+}
