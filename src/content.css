@@ -130,7 +130,16 @@ html.staytube-finding-remove-command ytd-popup-container {
 .staytube-copy-transcript {
   cursor: pointer;
   flex: 0 0 auto;
+  margin-inline-start: 8px !important;
   white-space: nowrap;
+}
+
+.staytube-copy-transcript .ytSpecButtonShapeNextTextContent {
+  margin-inline-start: 6px !important;
+}
+
+.staytube-copy-transcript .ytSpecTouchFeedbackShapeFill {
+  background-color: currentColor !important;
 }
 
 .staytube-copy-transcript:disabled {
