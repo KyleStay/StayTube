@@ -147,6 +147,41 @@ test("transcript metadata selects captions and reads manual chapters", () => {
   });
 });
 
+test("transcript metadata reads automatic chapters", () => {
+  const response = {
+    videoDetails: { videoId: "dQw4w9WgXcQ" },
+    captions: { playerCaptionsTracklistRenderer: { captionTracks: [
+      { baseUrl: "https://www.youtube.com/api/timedtext?lang=en", kind: "asr" }
+    ] } },
+    playerOverlays: { playerOverlayRenderer: { decoratedPlayerBarRenderer: {
+      decoratedPlayerBarRenderer: { playerBar: { multiMarkersPlayerBarRenderer: { markersMap: [{
+        key: "AUTO_CHAPTERS",
+        value: { chapters: [{ chapterRenderer: {
+          title: { runs: [{ text: "Automatic chapter" }] }, timeRangeStartMillis: 83000
+        } }] }
+      }] } } }
+    } } }
+  };
+  const html = `<script>var ytInitialPlayerResponse = ${JSON.stringify(response)};</script>`;
+  assert.deepEqual(Core.parseTranscriptMetadata(html, "dQw4w9WgXcQ").chapters, [
+    { title: "Automatic chapter", startMs: 83000 }
+  ]);
+});
+
+test("SPA transcript lookup rejects the stale bootstrap response", () => {
+  const response = (videoId) => `<script>var ytInitialPlayerResponse = ${JSON.stringify({
+    videoDetails: { videoId },
+    captions: { playerCaptionsTracklistRenderer: { captionTracks: [
+      { baseUrl: `https://www.youtube.com/api/timedtext?video=${videoId}` }
+    ] } }
+  })};</script>`;
+  assert.equal(Core.parseTranscriptMetadata(response("initialVideo"), "navigatedVideo"), null);
+  assert.equal(
+    Core.parseTranscriptMetadata(response("navigatedVideo"), "navigatedVideo").captionUrl,
+    "https://www.youtube.com/api/timedtext?video=navigatedVideo"
+  );
+});
+
 test("transcript Markdown intersperses timestamped chapter headings", () => {
   const segments = Core.captionSegmentsFromJson({ events: [
     { tStartMs: 0, segs: [{ utf8: "Hello\nworld" }] },
@@ -156,9 +191,17 @@ test("transcript Markdown intersperses timestamped chapter headings", () => {
     { title: "Introduction", startMs: 0 },
     { title: "Details", startMs: 65000 }
   ]), [
-    "## 0:00 Introduction", "", "Hello world",
-    "## 1:05 Details", "", "Next section"
+    "## 0s Introduction", "", "Hello world",
+    "## 1m 5s Details", "", "Next section"
   ].join("\n"));
+});
+
+test("transcript chapter timestamps use hour, minute, and second units", () => {
+  assert.equal(Core.formatTranscriptMarkdown([
+    { startMs: 3723000, text: "Long-form section" }
+  ], [
+    { title: "Deep dive", startMs: 3723000 }
+  ]), "## 1h 2m 3s Deep dive\n\nLong-form section");
 });
 
 test("transcript failure prompt contains useful context without requesting secrets", () => {
@@ -179,6 +222,94 @@ test("parseTimestamp converts native transcript timestamps", () => {
   assert.equal(Core.parseTimestamp("1:23"), 83000);
   assert.equal(Core.parseTimestamp("1:02:03"), 3723000);
   assert.equal(Core.parseTimestamp("not a timestamp"), null);
+});
+
+test("native transcript rows tolerate current view-model text hydration", () => {
+  assert.deepEqual(Core.nativeTranscriptSegment("1:23", "Chapter discussion"), {
+    startMs: 83000,
+    text: "Chapter discussion"
+  });
+  assert.deepEqual(Core.nativeTranscriptSegment(null, null, "1:23 Chapter discussion"), {
+    startMs: 83000,
+    text: "Chapter discussion"
+  });
+  assert.equal(Core.nativeTranscriptSegment(null, null, "Chapter discussion"), null);
+});
+
+test("empty expanded transcript panels are reset before a native retry", () => {
+  assert.equal(Core.shouldResetNativeTranscriptPanel({
+    expanded: true, loading: false, segmentCount: 0
+  }), true);
+  assert.equal(Core.shouldResetNativeTranscriptPanel({
+    expanded: true, loading: true, segmentCount: 0
+  }), false);
+  assert.equal(Core.shouldResetNativeTranscriptPanel({
+    expanded: true, loading: false, segmentCount: 1
+  }), false);
+  assert.equal(Core.shouldResetNativeTranscriptPanel({
+    expanded: false, loading: false, segmentCount: 0
+  }), false);
+});
+
+test("native transcript trust requires current ownership or changed rows", () => {
+  assert.equal(Core.canTrustNativeTranscriptPanel({
+    belongsToCurrentVideo: false,
+    changedSinceBaseline: false
+  }), false);
+  assert.equal(Core.canTrustNativeTranscriptPanel({
+    belongsToCurrentVideo: true,
+    changedSinceBaseline: false
+  }), true);
+  assert.equal(Core.canTrustNativeTranscriptPanel({
+    belongsToCurrentVideo: false,
+    changedSinceBaseline: true
+  }), true);
+});
+
+test("accessible publication details replace their own prior suffix", () => {
+  assert.equal(
+    Core.replaceAccessibleLabelDetail("2 days ago", null, "Published July 18 2026 3:00 PM"),
+    "2 days ago, Published July 18 2026 3:00 PM"
+  );
+  assert.equal(
+    Core.replaceAccessibleLabelDetail(
+      "2 days ago, Published July 18 2026 3:00 PM",
+      "Published July 18 2026 3:00 PM",
+      "Published July 19 2026 4:00 PM"
+    ),
+    "2 days ago, Published July 19 2026 4:00 PM"
+  );
+  assert.equal(
+    Core.replaceAccessibleLabelDetail(
+      "1 day ago",
+      "Published July 17 2026 2:00 PM",
+      "Published July 19 2026 4:00 PM"
+    ),
+    "1 day ago, Published July 19 2026 4:00 PM"
+  );
+});
+
+test("clipboard denial falls back to the legacy copy path", async () => {
+  const calls = [];
+  const method = await Core.copyTextWithFallback("transcript", {
+    writeText: async () => {
+      calls.push("clipboard");
+      throw new Error("NotAllowedError");
+    },
+    legacyCopy: async (text) => {
+      calls.push(`legacy:${text}`);
+      return true;
+    }
+  });
+  assert.equal(method, "execCommand");
+  assert.deepEqual(calls, ["clipboard", "legacy:transcript"]);
+});
+
+test("clipboard failure is reported when both copy paths are denied", async () => {
+  await assert.rejects(Core.copyTextWithFallback("transcript", {
+    writeText: async () => { throw new Error("NotAllowedError"); },
+    legacyCopy: async () => false
+  }), /browser denied clipboard access/);
 });
 
 test("caption parsers support YouTube XML and WebVTT fallbacks", () => {

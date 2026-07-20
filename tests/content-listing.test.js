@@ -29,7 +29,10 @@ test("watch descriptions gain the exact published date and time", () => {
   assert.match(source, /WATCH_DATE_FALLBACK_SELECTOR/);
   assert.match(source, /async function ensureWatchPublishedTime\(\)/);
   assert.match(source, /published\.classList\.add\("staytube-watch-published"\)/);
-  assert.match(source, /host\.insertAdjacentElement\("afterend", published\)/);
+  assert.match(source, /host\.append\(published\)/);
+  assert.match(source, /exposeWatchPublishedTimeToAssistiveTechnology\(host, published\)/);
+  assert.match(source, /replaceAccessibleLabelDetail\(currentLabel, previousDetail, detail\)/);
+  assert.doesNotMatch(source, /host\.insertAdjacentElement\("afterend", published\)/);
   assert.match(source, /ensureWatchPublishedTime\(\)/);
 });
 

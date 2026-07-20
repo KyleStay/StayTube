@@ -36,12 +36,12 @@ The extension only runs on `www.youtube.com` and `m.youtube.com`. It has no anal
 - Newly appended playlist rows are discovered automatically. Rows that YouTube inserts before assigning their video link are picked up as soon as that link is hydrated, so scrolling does not require a page refresh.
 - Deleted, private, age-restricted, region-blocked, or consent-gated videos may not expose metadata. In those cases the card explicitly says which value is unavailable.
 - If YouTube supplies only a calendar date, the extension labels the exact time as unavailable instead of inventing one.
-- If transcript copying fails, the button copies a privacy-conscious troubleshooting prompt with the video URL and error so the failure can be reproduced and improved without exposing signed caption URLs or authentication data.
+- If direct timed-text responses are empty or invalid, transcript copying retries through YouTube's native transcript panel. If copying still fails, the button copies a privacy-conscious troubleshooting prompt with the video URL and error without exposing signed caption URLs or authentication data.
 
 ## Verify
 
 The metadata parser and listing-selector regressions use Node's built-in test runner and need no dependencies:
 
 ```sh
-node --test tests/core.test.js
+node --test tests/*.test.js
 ```

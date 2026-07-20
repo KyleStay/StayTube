@@ -47,6 +47,13 @@
     "ytm-slim-video-metadata-section-renderer #description #info"
   ].join(",");
 
+  const NATIVE_TRANSCRIPT_BUTTON_SELECTOR = [
+    'ytd-video-description-transcript-section-renderer button[aria-label="Show transcript"]',
+    "ytd-video-description-transcript-section-renderer button",
+    'ytd-watch-metadata button[aria-label="Show transcript"]',
+    'button[aria-label="Transcript"]'
+  ].join(",");
+
   const metadataCache = new Map();
   const pendingTasks = [];
   const observedCards = new WeakSet();
@@ -505,10 +512,36 @@
     return [...document.querySelectorAll(WATCH_DATE_FALLBACK_SELECTOR)].find(isPublishedAge) ?? null;
   }
 
+  function removeWatchPublishedTimes() {
+    document.querySelectorAll(".staytube-watch-published").forEach((element) => {
+      const host = element.parentElement;
+      const previousDetail = host?.dataset.staytubeWatchAccessibleDetail;
+      const currentLabel = host?.getAttribute("aria-label");
+      if (host && previousDetail && currentLabel) {
+        const restoredLabel = Core.replaceAccessibleLabelDetail(currentLabel, previousDetail, null);
+        if (restoredLabel) host.setAttribute("aria-label", restoredLabel);
+        delete host.dataset.staytubeWatchAccessibleDetail;
+      }
+      element.remove();
+    });
+  }
+
+  function exposeWatchPublishedTimeToAssistiveTechnology(host, published) {
+    const currentLabel = host.getAttribute("aria-label");
+    if (!currentLabel) return;
+    const previousDetail = host.dataset.staytubeWatchAccessibleDetail;
+    const detail = `Published ${published.textContent.trim()}`;
+    host.setAttribute(
+      "aria-label",
+      Core.replaceAccessibleLabelDetail(currentLabel, previousDetail, detail)
+    );
+    host.dataset.staytubeWatchAccessibleDetail = detail;
+  }
+
   async function ensureWatchPublishedTime() {
     const videoId = currentWatchVideoId();
     if (!videoId) {
-      document.querySelectorAll(".staytube-watch-published").forEach((element) => element.remove());
+      removeWatchPublishedTimes();
       return;
     }
 
@@ -525,12 +558,15 @@
       if (!Core.looksLikePublishedAge(host.getAttribute("aria-label") || host.textContent)) return;
       if (document.querySelector(`.staytube-watch-published[data-video-id="${videoId}"]`)) return;
 
-      document.querySelectorAll(".staytube-watch-published").forEach((element) => element.remove());
+      removeWatchPublishedTimes();
       const published = makePublishedTime(metadata?.publishedAt);
       if (!published) return;
       published.classList.add("staytube-watch-published");
       published.dataset.videoId = videoId;
-      host.insertAdjacentElement("afterend", published);
+      // Keep the time inside YouTube's visible relative-age span. The collapsed
+      // description hides extra siblings in #info even though they remain in the DOM.
+      host.append(published);
+      exposeWatchPublishedTimeToAssistiveTechnology(host, published);
     } catch {
       metadataCache.delete(videoId);
     } finally {
@@ -593,7 +629,7 @@
       } catch (error) {
         captionError = error;
         try {
-          segments = await transcriptSegmentsFromNativePanel();
+          segments = await transcriptSegmentsFromNativePanel(videoId);
         } catch (panelError) {
           panelError.staytubeDiagnostics = {
             captionAttempts: captionError.staytubeDiagnostics?.captionAttempts ?? [],
@@ -667,8 +703,8 @@
     throw error;
   }
 
-  function readNativeTranscriptSegments() {
-    const renderers = document.querySelectorAll([
+  function readNativeTranscriptSegments(root = document) {
+    const renderers = root.querySelectorAll([
       "ytd-transcript-segment-renderer",
       "transcript-segment-view-model",
       "yt-formatted-string.ytd-transcript-segment-renderer"
@@ -677,15 +713,19 @@
     for (const renderer of renderers) {
       const timestampElement = renderer.querySelector([
         ".segment-timestamp",
-        "[class*='Timestamp']"
+        '[class*="timestamp" i]'
       ].join(","));
       const textElement = renderer.querySelector([
         ".segment-text",
-        "[class*='Segment']:not([class*='Timestamp'])"
+        '[class*="segment-text" i]',
+        '[class*="segmentviewmodeltext" i]'
       ].join(","));
-      const startMs = Core.parseTimestamp(timestampElement?.textContent ?? "");
-      const text = textElement?.textContent?.replace(/\s+/g, " ").trim();
-      if (startMs !== null && text) segments.push({ startMs, text });
+      const segment = Core.nativeTranscriptSegment(
+        timestampElement?.textContent,
+        textElement?.textContent,
+        renderer.textContent
+      );
+      if (segment) segments.push(segment);
     }
     return segments.filter((segment, index) => (
       index === 0
@@ -694,28 +734,99 @@
     ));
   }
 
-  function waitForNativeTranscript(timeoutMs = 6000) {
-    const existing = readNativeTranscriptSegments();
+  function nativeTranscriptSignature(segments) {
+    return JSON.stringify(segments.map(({ startMs, text }) => [startMs, text]));
+  }
+
+  function nativeTranscriptBaseline() {
+    return new Map(nativeTranscriptPanels().map((panel) => [
+      panel,
+      nativeTranscriptSignature(readNativeTranscriptSegments(panel))
+    ]));
+  }
+
+  function readCurrentNativeTranscript(videoId, baseline = null) {
+    for (const panel of nativeTranscriptPanels()) {
+      const segments = readNativeTranscriptSegments(panel);
+      if (!segments.length) continue;
+      const belongsToCurrentVideo = panel.dataset.staytubeTranscriptVideoId === videoId;
+      const changedSinceBaseline = baseline
+        && (!baseline.has(panel)
+          || baseline.get(panel) !== nativeTranscriptSignature(segments));
+      if (!Core.canTrustNativeTranscriptPanel({
+        belongsToCurrentVideo,
+        changedSinceBaseline
+      })) continue;
+      panel.dataset.staytubeTranscriptVideoId = videoId;
+      return segments;
+    }
+    return [];
+  }
+
+  function waitForNativeTranscript(videoId, baseline, timeoutMs = 6000) {
+    const existing = readCurrentNativeTranscript(videoId, baseline);
     if (existing.length) return Promise.resolve(existing);
 
     return new Promise((resolve, reject) => {
-      const observer = new MutationObserver(() => {
-        const segments = readNativeTranscriptSegments();
-        if (!segments.length) return;
+      const finishIfReady = () => {
+        const segments = readCurrentNativeTranscript(videoId, baseline);
+        if (!segments.length) return false;
         clearTimeout(timeout);
+        clearInterval(poll);
         observer.disconnect();
         resolve(segments);
-      });
+        return true;
+      };
+      const observer = new MutationObserver(finishIfReady);
+      const poll = setInterval(finishIfReady, 100);
       const timeout = setTimeout(() => {
+        clearInterval(poll);
         observer.disconnect();
         reject(new Error("YouTube's transcript panel did not load"));
       }, timeoutMs);
-      observer.observe(document.documentElement, { childList: true, subtree: true });
+      observer.observe(document.documentElement, {
+        characterData: true,
+        childList: true,
+        subtree: true
+      });
     });
   }
 
-  async function transcriptSegmentsFromNativePanel() {
-    const existing = readNativeTranscriptSegments();
+  function nativeTranscriptPanels() {
+    return [...document.querySelectorAll(
+      'ytd-engagement-panel-section-list-renderer[target-id*="transcript"]'
+    )];
+  }
+
+  async function resetStaleNativeTranscriptPanels(videoId) {
+    let reset = false;
+    for (const panel of nativeTranscriptPanels()) {
+      const expanded = panel.getAttribute("visibility")?.includes("EXPANDED");
+      const loading = Boolean(panel.querySelector("tp-yt-paper-spinner[active]"));
+      const segmentCount = readNativeTranscriptSegments(panel).length;
+      const belongsToCurrentVideo = panel.dataset.staytubeTranscriptVideoId === videoId;
+      const shouldReset = belongsToCurrentVideo
+        ? Core.shouldResetNativeTranscriptPanel({ expanded, loading, segmentCount })
+        : Boolean(expanded) && !loading;
+      if (!shouldReset) continue;
+
+      const close = panel.querySelector([
+        '#visibility-button button',
+        'button[aria-label="Close transcript"]',
+        'button[aria-label="Close"]',
+        '#visibility-button'
+      ].join(","));
+      if (!close) continue;
+      close.click();
+      reset = true;
+    }
+    if (reset) {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
+  }
+
+  async function transcriptSegmentsFromNativePanel(videoId) {
+    const existing = readCurrentNativeTranscript(videoId);
     if (existing.length) return existing;
 
     const expander = document.querySelector("ytd-text-inline-expander#description-inline-expander #expand");
@@ -724,31 +835,36 @@
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }
 
-    const buttons = [...document.querySelectorAll([
-      'ytd-video-description-transcript-section-renderer button[aria-label="Show transcript"]',
-      'button[aria-label="Transcript"]'
-    ].join(","))].sort((left, right) => (
-      Number(right.getClientRects().length > 0) - Number(left.getClientRects().length > 0)
-    ));
+    // YouTube can preserve an expanded but empty transcript engagement panel
+    // across SPA navigation. Close that stale panel so Show transcript issues a
+    // fresh native getTranscript request for the current video.
+    await resetStaleNativeTranscriptPanels(videoId);
+
+    // Ignore transcript rows that were mounted for a prior SPA destination. A
+    // panel is trusted only after StayTube observes it hydrate for this video.
+    const baseline = nativeTranscriptBaseline();
+
+    const allButtons = [...document.querySelectorAll(NATIVE_TRANSCRIPT_BUTTON_SELECTOR)];
+    const visibleButtons = allButtons.filter((button) => button.getClientRects().length > 0);
+    const buttons = visibleButtons.length ? visibleButtons : allButtons;
     if (!buttons.length) throw new Error("YouTube did not provide a transcript panel");
 
     let lastError;
     for (const nativeButton of buttons) {
       try {
-        const pendingSegments = waitForNativeTranscript();
+        const pendingSegments = waitForNativeTranscript(videoId, baseline);
         nativeButton.click();
         return await pendingSegments;
       } catch (error) {
         lastError = error;
+        await resetStaleNativeTranscriptPanels(videoId);
       }
     }
     throw lastError ?? new Error("YouTube's transcript panel did not load");
   }
 
   function nativeTranscriptDiagnostics() {
-    const panels = [...document.querySelectorAll(
-      'ytd-engagement-panel-section-list-renderer[target-id*="transcript"]'
-    )];
+    const panels = nativeTranscriptPanels();
     return {
       controls: document.querySelectorAll(
         'button[aria-label="Show transcript"], button[aria-label="Transcript"]'
@@ -764,20 +880,20 @@
   }
 
   async function writeClipboardText(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return;
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.setAttribute("readonly", "");
-      textarea.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
-      document.body.append(textarea);
-      textarea.select();
-      const copied = document.execCommand("copy");
-      textarea.remove();
-      if (!copied) throw new Error("The browser denied clipboard access");
-    }
+    return Core.copyTextWithFallback(text, {
+      writeText: (value) => navigator.clipboard.writeText(value),
+      legacyCopy(value) {
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.setAttribute("readonly", "");
+        textarea.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
+        document.body.append(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        textarea.remove();
+        return copied;
+      }
+    });
   }
 
   function ensureTranscriptButton() {
@@ -892,6 +1008,15 @@
     }
   });
   mutationObserver.observe(document.documentElement, Core.LISTING_MUTATION_OBSERVER_OPTIONS);
+  document.addEventListener("click", (event) => {
+    if (!event.isTrusted || !event.target.closest?.(NATIVE_TRANSCRIPT_BUTTON_SELECTOR)) return;
+    const videoId = currentWatchVideoId();
+    if (!videoId) return;
+    const baseline = nativeTranscriptBaseline();
+    // Associate native rows only after they hydrate following a real user action.
+    // Programmatic StayTube clicks are intentionally excluded by isTrusted.
+    waitForNativeTranscript(videoId, baseline).catch(() => {});
+  }, true);
   document.addEventListener("yt-navigate-finish", () => scheduleScan());
   document.addEventListener("yt-page-data-updated", () => scheduleScan());
   scheduleScan();

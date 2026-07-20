@@ -241,9 +241,11 @@
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    return hours > 0
-      ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
-      : `${minutes}:${String(seconds).padStart(2, "0")}`;
+    return [
+      hours > 0 ? `${hours}h` : null,
+      hours > 0 || minutes > 0 ? `${minutes}m` : null,
+      `${seconds}s`
+    ].filter(Boolean).join(" ");
   }
 
   function parseTimestamp(value) {
@@ -254,6 +256,53 @@
     const minutes = parts.pop();
     const hours = parts.pop() ?? 0;
     return ((hours * 60 * 60) + (minutes * 60) + seconds) * 1000;
+  }
+
+  function nativeTranscriptSegment(timestampValue, textValue, combinedValue = "") {
+    const normalize = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+    const combined = normalize(combinedValue);
+    const timestamp = normalize(timestampValue).match(/(?:\d+:)?\d{1,2}:\d{2}/)?.[0]
+      ?? combined.match(/(?:^|\s)((?:\d+:)?\d{1,2}:\d{2})(?:\s|$)/)?.[1];
+    const startMs = parseTimestamp(timestamp ?? "");
+    if (startMs === null) return null;
+
+    let text = normalize(textValue) || combined;
+    if (timestamp && text.startsWith(timestamp)) text = text.slice(timestamp.length).trim();
+    return text ? { startMs, text } : null;
+  }
+
+  function shouldResetNativeTranscriptPanel({ expanded, loading, segmentCount }) {
+    return Boolean(expanded) && !loading && Number(segmentCount) === 0;
+  }
+
+  function canTrustNativeTranscriptPanel({
+    belongsToCurrentVideo,
+    changedSinceBaseline
+  }) {
+    return Boolean(belongsToCurrentVideo || changedSinceBaseline);
+  }
+
+  function replaceAccessibleLabelDetail(label, previousDetail, nextDetail) {
+    if (typeof label !== "string" || !label.trim()) return null;
+    const previousSuffix = previousDetail ? `, ${previousDetail}` : "";
+    const base = previousSuffix && label.endsWith(previousSuffix)
+      ? label.slice(0, -previousSuffix.length)
+      : label;
+    return nextDetail ? `${base}, ${nextDetail}` : base;
+  }
+
+  async function copyTextWithFallback(text, { writeText, legacyCopy }) {
+    try {
+      await writeText(text);
+      return "clipboard";
+    } catch {
+      try {
+        if (await legacyCopy(text)) return "execCommand";
+      } catch {
+        // Report a stable, privacy-safe error for either clipboard mechanism.
+      }
+      throw new Error("The browser denied clipboard access");
+    }
   }
 
   function formatTranscriptMarkdown(segments, chapters) {
@@ -283,7 +332,7 @@
 
 Expected behavior:
 - On a YouTube watch page, copy the available transcript as Markdown.
-- Intersperse chapters as headings in the form: ## 1:23 Chapter title
+- Intersperse chapters as headings in the form: ## 1m 23s Chapter title
 - Keep working across YouTube single-page navigation.
 - Preserve the native YouTube-style button beside Share.
 
@@ -363,15 +412,20 @@ Implement the smallest robust fix, including a transcript-panel fallback if need
     captionSegmentsFromJson,
     captionSegmentsFromVtt,
     captionSegmentsFromXml,
+    canTrustNativeTranscriptPanel,
     compactYearAge,
+    copyTextWithFallback,
     buildTranscriptDebugPrompt,
     formatTranscriptMarkdown,
     looksLikePublishedAge,
+    nativeTranscriptSegment,
     parseWatchHtml,
     parseTranscriptMetadata,
     parseTimestamp,
     publicationDisplayMode,
+    replaceAccessibleLabelDetail,
     relativeAgeUnit,
-    readInitialPlayerResponse
+    readInitialPlayerResponse,
+    shouldResetNativeTranscriptPanel
   };
 });
