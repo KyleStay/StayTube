@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StayTube Chrome Web Store submission</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f3fa;
+      --surface: #ffffff;
+      --surface-2: #f0edf7;
+      --text: #211a32;
+      --muted: #665d78;
+      --line: #dcd5e8;
+      --brand: #d92755;
+      --brand-2: #281b46;
+      --good: #16704d;
+      --shadow: 0 12px 34px rgba(34, 22, 57, .09);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #151120;
+        --surface: #211a31;
+        --surface-2: #2b2340;
+        --text: #f7f2ff;
+        --muted: #bcb2ce;
+        --line: #443957;
+        --brand: #ff6375;
+        --brand-2: #ff96a1;
+        --good: #62d4a6;
+        --shadow: 0 12px 34px rgba(0, 0, 0, .24);
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+    header { background: linear-gradient(125deg, #211638, #46235d); color: white; padding: 42px 24px; }
+    .header-inner, main { width: min(1060px, calc(100% - 32px)); margin: 0 auto; }
+    .brand-row { display: flex; gap: 18px; align-items: center; }
+    .brand-row img { width: 76px; height: 76px; }
+    h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); letter-spacing: -.03em; }
+    header p { color: #ddd4eb; margin: 8px 0 0; }
+    main { padding: 26px 0 60px; }
+    .status { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+    .pill { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13px; }
+    .pill::before { content: "✓"; color: var(--good); font-weight: 800; }
+    section { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); margin: 18px 0; overflow: hidden; }
+    section > h2 { margin: 0; padding: 20px 22px 14px; font-size: 21px; }
+    section > p { margin: -4px 22px 16px; color: var(--muted); }
+    .field { padding: 18px 22px; border-top: 1px solid var(--line); }
+    .field-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+    .field h3 { margin: 0; font-size: 15px; }
+    .hint { color: var(--muted); font-size: 12px; font-weight: 500; margin-left: 7px; }
+    textarea, .value { width: 100%; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; font: 14px/1.48 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    textarea { min-height: 84px; resize: vertical; }
+    textarea.long { min-height: 330px; }
+    button { border: 0; border-radius: 9px; padding: 8px 12px; background: var(--brand); color: white; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    button:hover { filter: brightness(1.05); }
+    button:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent); outline-offset: 2px; }
+    .choices { display: grid; gap: 8px; }
+    .choice { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--surface-2); border-radius: 10px; }
+    .choice strong { color: var(--good); }
+    .checklist { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; padding: 0 22px 22px; }
+    .checklist label { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+    .checklist input { margin-top: 3px; accent-color: var(--brand); }
+    code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
+    .toast { position: fixed; right: 18px; bottom: 18px; background: var(--brand-2); color: white; padding: 12px 16px; border-radius: 10px; opacity: 0; transform: translateY(12px); transition: .18s ease; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 600px) {
+      .field-head { align-items: flex-start; }
+      .field-head button { padding: 7px 9px; }
+      .hint { display: block; margin: 3px 0 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner brand-row">
+      <img src="../assets/icons/icon-128.png" alt="StayTube icon">
+      <div>
+        <h1>Chrome Web Store submission</h1>
+        <p>StayTube 1.0.3 · Copy each answer directly into the Developer Dashboard.</p>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="status" aria-label="Package status">
+      <span class="pill">Manifest V3</span>
+      <span class="pill">Minimum permissions</span>
+      <span class="pill">No remote code</span>
+      <span class="pill">No analytics or ads</span>
+      <span class="pill">Store images included</span>
+    </div>
+
+    <section>
+      <h2>Store listing</h2>
+      <p>Use English (United States), Productivity, and the default public distribution.</p>
+
+      <div class="field">
+        <div class="field-head"><h3>Name <span class="hint">from manifest</span></h3><button data-copy="name">Copy</button></div>
+        <div class="value" id="name">StayTube Listing Details</div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Summary <span class="hint">from manifest · 132 characters max</span></h3><button data-copy="summary">Copy</button></div>
+        <div class="value" id="summary">Adds clickable channels and exact local publication times to YouTube listings and playing videos.</div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Detailed description</h3><button data-copy="description">Copy</button></div>
+        <textarea class="long" id="description" readonly>Make YouTube listings and playlists easier to scan, manage, and revisit.
+
+StayTube enhances the YouTube interface without ads, accounts, analytics, or a developer-operated server. It works directly on YouTube and keeps its temporary metadata cache inside the current tab.
+
+FEATURES
+
+• See the channel name as a visible, clickable link on supported video cards.
+• See the exact publication date and time in your browser's local timezone.
+• Read complete listing titles instead of truncated titles.
+• Add videos to Watch Later from supported thumbnails.
+• Remove videos directly from editable playlist rows.
+• Open a playlist video in a clean new tab without playlist parameters.
+• Filter full playlists by watch progress or isolate unavailable videos.
+• See the exact publication time on a playing video's description.
+• Copy available transcripts as Markdown with timestamped chapter headings.
+
+BUILT FOR DYNAMIC YOUTUBE PAGES
+
+StayTube continuously discovers newly appended and lazily loaded video cards as you scroll. It supports common grids, search results, sidebar recommendations, playlist rows and panels, Shorts shelves, community-post videos, lockup cards, and mobile renderers.
+
+PRIVACY
+
+StayTube processes the current YouTube page, video links, visible metadata, playlist state, and transcript text locally to provide the features above. When more metadata is needed, it requests the relevant YouTube page directly from YouTube over HTTPS. Authenticated same-origin requests may include browser-managed YouTube cookies. It does not send information to the developer or unrelated third parties, and it has no analytics, advertising, or tracking. Transcript text is copied only when you press the copy button.
+
+YouTube is a trademark of Google LLC. Use of this trademark is subject to Google Permissions.</textarea>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Category</h3><button data-copy="category">Copy</button></div>
+        <div class="value" id="category">Productivity</div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Language</h3><button data-copy="language">Copy</button></div>
+        <div class="value" id="language">English (United States)</div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Homepage URL</h3><button data-copy="homepage">Copy</button></div>
+        <div class="value" id="homepage">https://github.com/KyleStay/StayTube</div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Support URL</h3><button data-copy="support">Copy</button></div>
+        <div class="value" id="support">https://github.com/KyleStay/StayTube/issues</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Privacy practices</h2>
+      <p>These answers intentionally disclose local processing of YouTube content and URLs.</p>
+
+      <div class="field">
+        <div class="field-head"><h3>Single purpose description</h3><button data-copy="purpose">Copy</button></div>
+        <textarea id="purpose" readonly>StayTube improves the usefulness of YouTube video listings, playlists, and watch pages by adding publication details, channel links, playlist actions and filters, and user-initiated transcript copying directly to the YouTube interface.</textarea>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>clipboardWrite justification</h3><button data-copy="clipboard">Copy</button></div>
+        <textarea id="clipboard" readonly>The permission is used only when the user clicks StayTube's “Copy transcript” button. It writes the selected video's available transcript, formatted as Markdown, to the clipboard. StayTube never reads clipboard contents.</textarea>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Host access justification <span class="hint">YouTube content-script access</span></h3><button data-copy="host">Copy</button></div>
+        <textarea id="host" readonly>StayTube runs only on https://www.youtube.com/* and https://m.youtube.com/*. This access is required to discover video listings as YouTube dynamically loads them, read the YouTube metadata needed for the visible features, add controls and publication details to the page, and request the corresponding YouTube watch or caption response when the user-facing feature requires it. No access to other websites is requested.</textarea>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Remote code justification</h3><button data-copy="remote">Copy</button></div>
+        <div class="value" id="remote">No, I am not using remote code.</div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Data disclosures <span class="hint">select these checkboxes</span></h3><button data-copy="data-types">Copy labels</button></div>
+        <div class="choices" id="data-types">
+          <div class="choice"><strong>✓</strong><span><b>Website content</b> — video and channel metadata, playlist state, watch-progress indicators, and transcript text are processed locally.</span></div>
+          <div class="choice"><strong>✓</strong><span><b>Web history</b> — the current YouTube page URL and video links on that page are processed locally; history outside YouTube is not accessed.</span></div>
+          <div class="choice"><strong>—</strong><span>Do not select the other data-type boxes.</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Data use certification <span class="hint">check every certification</span></h3><button data-copy="certification">Copy labels</button></div>
+        <div class="value" id="certification">I do not sell or transfer user data to third parties outside the approved use cases.&#10;I do not use or transfer user data for purposes unrelated to the item's single purpose.&#10;I do not use or transfer user data to determine creditworthiness or for lending purposes.</div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Privacy policy URL</h3><button data-copy="privacy-url">Copy</button></div>
+        <div class="value" id="privacy-url">https://github.com/KyleStay/StayTube/blob/main/PRIVACY.md</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Distribution and reviewer information</h2>
+      <div class="field">
+        <div class="field-head"><h3>Distribution choices</h3><button data-copy="distribution">Copy labels</button></div>
+        <div class="value" id="distribution">Visibility: Public&#10;Regions: All regions&#10;Mature content: No&#10;Pricing: Free</div>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>Reviewer notes / test instructions</h3><button data-copy="reviewer">Copy</button></div>
+        <textarea id="reviewer" readonly>No account, payment, or special setup is required. Install the extension and open https://www.youtube.com/. On a home, search, history, or playlist page, StayTube adds channel links and publication details as cards load. On an editable playlist, row actions and the watch-progress filter appear. On a watch page with captions, open the description and click “Copy transcript” to test the clipboard feature. The extension contains no remote code and communicates only with YouTube over HTTPS.</textarea>
+      </div>
+    </section>
+
+    <section>
+      <h2>Upload checklist</h2>
+      <p>The package and images are beside this helper in the repository.</p>
+      <div class="checklist">
+        <label><input type="checkbox"> Upload <code>dist/staytube-1.0.3-chrome-web-store.zip</code></label>
+        <label><input type="checkbox"> Upload <code>assets/icons/icon-128.png</code> as the store icon</label>
+        <label><input type="checkbox"> Capture and upload real 1280×800 screenshots from the unpacked extension; files in <code>store-assets/mockups</code> are design references only</label>
+        <label><input type="checkbox"> Upload <code>small-promo.png</code> (440×280)</label>
+        <label><input type="checkbox"> Upload <code>marquee-promo.png</code> (1400×560, optional)</label>
+        <label><input type="checkbox"> Leave promotional video blank unless you create one</label>
+        <label><input type="checkbox"> Confirm the GitHub repository and privacy policy are public</label>
+        <label><input type="checkbox"> Save each dashboard tab, then submit for review</label>
+      </div>
+    </section>
+  </main>
+  <div class="toast" role="status" aria-live="polite">Copied</div>
+  <script>
+    const toast = document.querySelector('.toast');
+    let toastTimer;
+
+    async function copyValue(id, button) {
+      const source = document.getElementById(id);
+      const value = source.value ?? source.innerText;
+      try {
+        await navigator.clipboard.writeText(value.trim());
+      } catch {
+        const fallback = document.createElement('textarea');
+        fallback.value = value.trim();
+        fallback.style.position = 'fixed';
+        fallback.style.opacity = '0';
+        document.body.append(fallback);
+        fallback.select();
+        document.execCommand('copy');
+        fallback.remove();
+      }
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
+      setTimeout(() => { button.textContent = original; }, 1200);
+    }
+
+    document.querySelectorAll('[data-copy]').forEach((button) => {
+      button.addEventListener('click', () => copyValue(button.dataset.copy, button));
+    });
+  </script>
+</body>
+</html>

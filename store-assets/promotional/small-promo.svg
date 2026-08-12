@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="280" viewBox="0 0 440 280">
+  <defs>
+    <linearGradient id="bg" x1="25" y1="20" x2="410" y2="260" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17122e"/>
+      <stop offset="1" stop-color="#30204e"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="145" y1="72" x2="237" y2="173" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff6868"/>
+      <stop offset="1" stop-color="#df2858"/>
+    </linearGradient>
+  </defs>
+  <rect width="440" height="280" fill="url(#bg)"/>
+  <circle cx="398" cy="44" r="82" fill="#744ee8" opacity=".18"/>
+  <circle cx="50" cy="258" r="108" fill="#ff4964" opacity=".12"/>
+  <rect x="44" y="50" width="104" height="104" rx="28" fill="url(#mark)"/>
+  <path d="M84 79c0-3.2 3.5-5.2 6.2-3.5l34 20.3c2.8 1.6 2.8 5.6 0 7.2l-34 20.3c-2.7 1.7-6.2-.3-6.2-3.5V79Z" fill="#fff"/>
+  <circle cx="72" cy="123" r="14" fill="#281b46"/>
+  <path d="M72 115v8l5.5 3.2" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+  <text x="174" y="101" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700">StayTube</text>
+  <text x="174" y="132" fill="#d9d2ec" font-family="Arial, Helvetica, sans-serif" font-size="16">More useful YouTube listings</text>
+  <text x="44" y="211" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="600">Exact times. Better playlists.</text>
+  <text x="44" y="239" fill="#d9d2ec" font-family="Arial, Helvetica, sans-serif" font-size="16">Transcript copy built in.</text>
+</svg>

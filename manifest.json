@@ -3,6 +3,12 @@
   "name": "StayTube Listing Details",
   "version": "1.0.3",
   "description": "Adds clickable channels and exact local publication times to YouTube listings and playing videos.",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
   "permissions": [
     "clipboardWrite"
   ],

@@ -13,6 +13,19 @@ test("extractVideoId recognizes listing URL variants", () => {
   assert.equal(Core.extractVideoId("/playlist?list=abc"), null);
 });
 
+test("cleanVideoUrl removes playlist parameters but keeps the resume timestamp", () => {
+  const id = "dQw4w9WgXcQ";
+  assert.equal(
+    Core.cleanVideoUrl(`/watch?v=${id}&list=PL123&index=4&t=30s`, "https://www.youtube.com/playlist?list=PL123"),
+    `https://www.youtube.com/watch?v=${id}&t=30s`
+  );
+  assert.equal(
+    Core.cleanVideoUrl(`/watch?v=${id}&list=PL123&index=4`, "https://www.youtube.com/playlist?list=PL123"),
+    `https://www.youtube.com/watch?v=${id}`
+  );
+  assert.equal(Core.cleanVideoUrl("/playlist?list=PL123"), null);
+});
+
 test("parseWatchHtml extracts exact publishing and channel metadata", () => {
   const response = {
     videoDetails: {
@@ -122,6 +135,49 @@ test("listing observer detects appended and lazily hydrated video links", () => 
   });
   assert.equal(Object.isFrozen(Core.LISTING_MUTATION_OBSERVER_OPTIONS), true);
   assert.equal(Object.isFrozen(Core.LISTING_MUTATION_OBSERVER_OPTIONS.attributeFilter), true);
+});
+
+test("playlist progress observer options stay scoped to style and aria updates", () => {
+  assert.deepEqual(Core.PLAYLIST_PROGRESS_OBSERVER_OPTIONS, {
+    attributeFilter: ["style", "aria-label", "aria-valuenow", "src"],
+    attributes: true,
+    subtree: true
+  });
+  assert.equal(Object.isFrozen(Core.PLAYLIST_PROGRESS_OBSERVER_OPTIONS), true);
+  assert.equal(Object.isFrozen(Core.PLAYLIST_PROGRESS_OBSERVER_OPTIONS.attributeFilter), true);
+});
+
+test("unavailable listing titles match YouTube's placeholder patterns only", () => {
+  assert.equal(Core.isUnavailableListingTitle("[Deleted video]"), true);
+  assert.equal(Core.isUnavailableListingTitle("[Private video]"), true);
+  assert.equal(Core.isUnavailableListingTitle(" [ Unavailable video ] "), true);
+  assert.equal(Core.isUnavailableListingTitle("[Live] My concert video"), false);
+  assert.equal(Core.isUnavailableListingTitle("Deleted video"), false);
+  assert.equal(Core.isUnavailableListingTitle(undefined), false);
+});
+
+test("playlist watch progress recognizes YouTube indicator formats", () => {
+  assert.equal(Core.parseWatchProgress("width: 42.5%"), 42.5);
+  assert.equal(Core.parseWatchProgress("left: 0%; width: 42%"), 42);
+  assert.equal(Core.parseWatchProgress("transform: scaleX(0.84)"), 84);
+  assert.equal(Core.parseWatchProgress("Fully watched"), 100);
+  assert.equal(Core.parseWatchProgress("Not watched"), 0);
+  assert.equal(Core.parseWatchProgress("Never watched"), 0);
+  assert.equal(Core.parseWatchProgress("No progress"), null);
+});
+
+test("playlist overlay data recognizes resume and completed states", () => {
+  assert.equal(Core.watchProgressFromOverlays([
+    { thumbnailOverlayResumePlaybackRenderer: { percentDurationWatched: 84 } }
+  ]), 84);
+  assert.equal(Core.watchProgressFromOverlays([
+    { thumbnailOverlayPlaybackStatusRenderer: { text: { simpleText: "WATCHED" } } }
+  ]), 100);
+  assert.equal(Core.watchProgressFromOverlays([
+    { thumbnailOverlayPlaybackStatusRenderer: { accessibility: { accessibilityData: { label: "Not watched" } } } }
+  ]), 0);
+  assert.equal(Core.watchProgressFromOverlays([]), 0);
+  assert.equal(Core.watchProgressFromOverlays(undefined), null);
 });
 
 test("transcript metadata selects captions and reads manual chapters", () => {
