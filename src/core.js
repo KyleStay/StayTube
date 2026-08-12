@@ -28,6 +28,14 @@
     childList: true,
     subtree: true
   });
+  /* style/aria attributes churn constantly across YouTube (player chrome, hover
+     animations), so this filter must only ever be used on observers scoped to a
+     playlist container — never on the document-wide listing observer above. */
+  const PLAYLIST_PROGRESS_OBSERVER_OPTIONS = Object.freeze({
+    attributeFilter: Object.freeze(["style", "aria-label", "aria-valuenow", "src"]),
+    attributes: true,
+    subtree: true
+  });
 
   function extractVideoId(value, baseUrl = "https://www.youtube.com/") {
     if (!value) return null;
@@ -51,6 +59,67 @@
     }
 
     return null;
+  }
+
+  function cleanVideoUrl(value, baseUrl = "https://www.youtube.com/") {
+    const videoId = extractVideoId(value, baseUrl);
+    if (!videoId) return null;
+
+    try {
+      const url = new URL("/watch", baseUrl);
+      url.searchParams.set("v", videoId);
+      const resumeTime = new URL(value, baseUrl).searchParams.get("t");
+      if (resumeTime) url.searchParams.set("t", resumeTime);
+      return url.href;
+    } catch {
+      return null;
+    }
+  }
+
+  function parseWatchProgress(value) {
+    if (typeof value === "number") return Number.isFinite(value) ? value : null;
+    if (typeof value !== "string") return null;
+
+    const scale = value.match(/scaleX\(\s*(\d+(?:\.\d+)?)\s*\)/i);
+    if (scale) return Number(scale[1]) * 100;
+
+    /* Style strings often hold several percentages (e.g. "left: 0%; width: 42%"),
+       and only the width tracks watch progress. */
+    const width = value.match(/width:\s*(\d+(?:\.\d+)?)\s*%/i);
+    if (width) return Number(width[1]);
+
+    const percent = value.match(/(\d+(?:\.\d+)?)\s*%/);
+    if (percent) return Number(percent[1]);
+
+    const numeric = value.trim();
+    if (/^\d+(?:\.\d+)?$/.test(numeric)) return Number(numeric);
+    if (/\b(?:not|never|un)\s*-?\s*watched\b/i.test(value)) return 0;
+    if (/\b(?:fully\s+watched|watched|completed)\b/i.test(value)) return 100;
+    return null;
+  }
+
+  function watchProgressFromOverlays(overlays) {
+    if (!Array.isArray(overlays)) return null;
+
+    for (const overlay of overlays) {
+      const resume = overlay?.thumbnailOverlayResumePlaybackRenderer;
+      const resumeProgress = parseWatchProgress(resume?.percentDurationWatched);
+      if (resumeProgress !== null) return resumeProgress;
+
+      const status = overlay?.thumbnailOverlayPlaybackStatusRenderer;
+      const statusLabel = status?.text?.simpleText
+        ?? status?.text?.runs?.map((run) => run.text).join("")
+        ?? status?.accessibility?.accessibilityData?.label;
+      const statusProgress = parseWatchProgress(statusLabel);
+      if (statusProgress !== null) return statusProgress;
+    }
+
+    return 0;
+  }
+
+  function isUnavailableListingTitle(value) {
+    if (typeof value !== "string") return false;
+    return /^\[\s*(?:deleted|private|unavailable|hidden|restricted)\s+video\s*\]$/i.test(value.trim());
   }
 
   function findJsonObject(source, marker) {
@@ -405,9 +474,12 @@ Implement the smallest robust fix, including a transcript-panel fallback if need
     CLASSIC_DATE_FALLBACK_SELECTORS,
     LISTING_MUTATION_OBSERVER_OPTIONS,
     NATIVE_DATE_CANDIDATE_SELECTORS,
+    PLAYLIST_PROGRESS_OBSERVER_OPTIONS,
+    cleanVideoUrl,
     extractVideoId,
     findJsonObject,
     isExactTimestamp,
+    isUnavailableListingTitle,
     isRemoveFromPlaylistLabel,
     captionSegmentsFromJson,
     captionSegmentsFromVtt,
@@ -422,6 +494,8 @@ Implement the smallest robust fix, including a transcript-panel fallback if need
     parseWatchHtml,
     parseTranscriptMetadata,
     parseTimestamp,
+    parseWatchProgress,
+    watchProgressFromOverlays,
     publicationDisplayMode,
     replaceAccessibleLabelDetail,
     relativeAgeUnit,

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <rect width="1280" height="800" fill="#17131f"/>
+  <rect width="1280" height="74" fill="#0f0d14"/>
+  <rect x="32" y="20" width="34" height="34" rx="9" fill="#ef405f"/>
+  <path d="M45 30v14l12-7-12-7Z" fill="#fff"/>
+  <text x="78" y="44" fill="#fff" font-family="Arial, sans-serif" font-size="23" font-weight="700">StayTube</text>
+  <rect x="38" y="105" width="760" height="430" rx="18" fill="#2b3247"/>
+  <circle cx="418" cy="320" r="54" fill="#000" opacity=".5"/>
+  <path d="M401 289v62l53-31-53-31Z" fill="#fff"/>
+  <text x="38" y="583" fill="#fff" font-family="Arial, sans-serif" font-size="27" font-weight="700">Designing spaces that feel calm</text>
+  <text x="38" y="619" fill="#bcb2c6" font-family="Arial, sans-serif" font-size="15">246K views · Aug 1, 2026</text>
+  <text x="38" y="649" fill="#ff8796" font-family="Arial, sans-serif" font-size="15" font-weight="700">Published Aug 1, 2026 at 10:14 AM</text>
+  <rect x="38" y="678" width="190" height="48" rx="24" fill="#ef405f"/>
+  <text x="62" y="708" fill="#fff" font-family="Arial, sans-serif" font-size="15" font-weight="700">Copy transcript</text>
+  <path d="M190 695h12v15h-12zM185 700h12v15h-12z" fill="none" stroke="#fff" stroke-width="2"/>
+
+  <rect x="840" y="105" width="400" height="621" rx="18" fill="#241e2c" stroke="#4c4059"/>
+  <text x="870" y="148" fill="#fff" font-family="Arial, sans-serif" font-size="22" font-weight="700">Markdown on your clipboard</text>
+  <rect x="870" y="175" width="340" height="510" rx="12" fill="#15121a"/>
+  <text x="894" y="216" fill="#ff8796" font-family="Menlo, monospace" font-size="15" font-weight="700">## 0s Introduction</text>
+  <text x="894" y="252" fill="#d6cedd" font-family="Menlo, monospace" font-size="14">Today we're looking at why</text>
+  <text x="894" y="277" fill="#d6cedd" font-family="Menlo, monospace" font-size="14">some rooms immediately feel calm.</text>
+  <text x="894" y="329" fill="#ff8796" font-family="Menlo, monospace" font-size="15" font-weight="700">## 1m 42s Light</text>
+  <text x="894" y="365" fill="#d6cedd" font-family="Menlo, monospace" font-size="14">Soft, indirect light gives the eye</text>
+  <text x="894" y="390" fill="#d6cedd" font-family="Menlo, monospace" font-size="14">fewer hard edges to process.</text>
+  <text x="894" y="442" fill="#ff8796" font-family="Menlo, monospace" font-size="15" font-weight="700">## 4m 8s Materials</text>
+  <text x="894" y="478" fill="#d6cedd" font-family="Menlo, monospace" font-size="14">Natural texture adds depth without</text>
+  <text x="894" y="503" fill="#d6cedd" font-family="Menlo, monospace" font-size="14">adding visual noise.</text>
+  <rect x="894" y="584" width="183" height="44" rx="22" fill="#2f754f"/>
+  <text x="918" y="611" fill="#fff" font-family="Arial, sans-serif" font-size="14" font-weight="700">Transcript copied ✓</text>
+  <text x="38" y="770" fill="#fff" font-family="Arial, sans-serif" font-size="24" font-weight="700">One click turns available captions into organized, timestamped notes.</text>
+</svg>

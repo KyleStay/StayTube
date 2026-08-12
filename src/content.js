@@ -54,6 +54,14 @@
     'button[aria-label="Transcript"]'
   ].join(",");
 
+  /* Rows outside [min, max] watch progress collapse; 0-100 shows everything.
+     Unwatched rows sit at 0 and fully watched rows at 100, so the two slider
+     ends govern them without needing separate toggles. */
+  const playlistProgressGate = { min: 0, max: 100 };
+  /* When set, only unavailable (deleted/private) rows stay visible and the
+     progress gate is suspended so the two filters can never conflict. */
+  let playlistUnavailableOnly = false;
+
   const metadataCache = new Map();
   const pendingTasks = [];
   const observedCards = new WeakSet();
@@ -61,6 +69,15 @@
   let activeRequests = 0;
   let scanScheduled = false;
   const pendingScanRoots = new Set();
+  const editablePlaylistIds = new Set();
+  const observedPlaylistContainers = new WeakSet();
+  const pendingCollapseCards = new Set();
+  let collapseUpdateScheduled = false;
+  let collapseFilterScheduled = false;
+  let collapseFilterPreferCached = true;
+  let playlistReconciliationPending = false;
+  let cachedPlaylistIdSearch;
+  let cachedPlaylistId = null;
   let transcriptButtonResetTimer;
 
   const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -411,6 +428,7 @@
       } else {
         menuButton.click();
       }
+      schedulePlaylistActionReconciliation();
     };
     const pollForCommand = () => {
       const command = findRemovePlaylistCommand();
@@ -432,29 +450,422 @@
     pollTimer = setTimeout(pollForCommand, 50);
   }
 
+  function currentPlaylistId() {
+    if (cachedPlaylistIdSearch !== location.search) {
+      cachedPlaylistIdSearch = location.search;
+      cachedPlaylistId = new URLSearchParams(location.search).get("list");
+    }
+    return cachedPlaylistId;
+  }
+
+  function playlistRowIsEditable(card) {
+    const playlistId = currentPlaylistId();
+    if (playlistId === "WL" || editablePlaylistIds.has(playlistId)) return true;
+
+    if (card.querySelector(":scope .playlist-drag-handle, :scope #reorder, :scope [class*='drag-handle']")) {
+      if (playlistId) editablePlaylistIds.add(playlistId);
+      return true;
+    }
+
+    const list = card.closest("ytd-playlist-video-list-renderer");
+    const listData = list?.data ?? list?.__data?.data;
+    if (listData?.isEditable === true) {
+      if (playlistId) editablePlaylistIds.add(playlistId);
+      return true;
+    }
+
+    const rowData = card.data ?? card.__data?.data;
+    const menuItems = rowData?.menu?.menuRenderer?.items ?? [];
+    const hasRemoveCommand = menuItems.some((item) => {
+      const renderer = item.menuServiceItemRenderer ?? item.menuServiceItemDownloadRenderer;
+      const label = renderer?.text?.simpleText
+        ?? renderer?.text?.runs?.map((run) => run.text).join("")
+        ?? renderer?.accessibility?.accessibilityData?.label;
+      return Core.isRemoveFromPlaylistLabel(label);
+    });
+    if (hasRemoveCommand && playlistId) editablePlaylistIds.add(playlistId);
+    return hasRemoveCommand;
+  }
+
   function ensurePlaylistRemoveButton(card) {
     if (!card.matches("ytd-playlist-video-renderer")) return;
-    if (!card.querySelector(":scope .playlist-drag-handle")) return;
-    const menu = card.querySelector(":scope > #menu");
-    if (!menu || menu.querySelector(":scope > .staytube-playlist-remove")) return;
+    if (!playlistRowIsEditable(card)) return;
+    const menu = card.querySelector(":scope > #menu, :scope #menu");
+    if (!menu) return;
 
     const title = card.querySelector(":scope #video-title")?.textContent?.trim();
-    const button = document.createElement("button");
-    button.className = "staytube-playlist-remove";
-    button.type = "button";
-    button.textContent = "×";
+    let button = menu.querySelector(":scope > .staytube-playlist-remove");
+    if (!button) {
+      button = document.createElement("button");
+      button.className = "staytube-playlist-remove";
+      button.type = "button";
+      button.textContent = "×";
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runRemovePlaylistCommand(card, button);
+      });
+      /* Keep a deterministic [open-clean, remove] order no matter which of the
+         pair YouTube's re-renders destroy and we recreate first. */
+      const cleanLink = menu.querySelector(":scope > .staytube-playlist-open-clean");
+      if (cleanLink) {
+        cleanLink.after(button);
+      } else {
+        menu.prepend(button);
+      }
+    }
     button.setAttribute("aria-label", title ? `Remove ${title} from playlist` : "Remove video from playlist");
     button.title = "Remove from playlist";
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      runRemovePlaylistCommand(card, button);
+  }
+
+  function ensurePlaylistCleanLink(card) {
+    if (!card.matches("ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer")) return;
+
+    let link = card.querySelector(":scope > #menu > .staytube-playlist-open-clean");
+    const videoLink = card.querySelector(VIDEO_LINK_SELECTOR);
+    const cleanUrl = Core.cleanVideoUrl(videoLink?.href, location.origin);
+    const menu = card.querySelector(":scope > #menu");
+    if (!cleanUrl || !menu) {
+      link?.remove();
+      return;
+    }
+
+    const title = card.querySelector(":scope #video-title, :scope #video-title-link")
+      ?.textContent?.trim();
+    link = menu.querySelector(":scope > .staytube-playlist-open-clean");
+    if (!link) {
+      link = document.createElement("a");
+      link.className = "staytube-playlist-open-clean";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "↗";
+      link.addEventListener("click", (event) => event.stopPropagation());
+      menu.prepend(link);
+    }
+
+    /* Self-heal a flipped pair; only move the link when actually misordered so
+       the reorder cannot retrigger the mutation observer every pass. */
+    const removeButton = menu.querySelector(":scope > .staytube-playlist-remove");
+    if (removeButton && (link.compareDocumentPosition(removeButton) & Node.DOCUMENT_POSITION_PRECEDING)) {
+      removeButton.before(link);
+    }
+
+    link.href = cleanUrl;
+    link.setAttribute(
+      "aria-label",
+      title ? `Open ${title} without playlist in a new tab` : "Open video without playlist in a new tab"
+    );
+    link.title = "Open video without playlist in a new tab";
+  }
+
+  function reconcilePlaylistRowActions() {
+    document.querySelectorAll(
+      "ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer"
+    ).forEach((card) => {
+      ensurePlaylistRemoveButton(card);
+      ensurePlaylistCleanLink(card);
     });
-    menu.prepend(button);
+  }
+
+  function schedulePlaylistActionReconciliation() {
+    if (playlistReconciliationPending) return;
+    playlistReconciliationPending = true;
+    const delays = [0, 100, 300, 750];
+    delays.forEach((delay, index) => setTimeout(() => {
+      if (index === delays.length - 1) playlistReconciliationPending = false;
+      reconcilePlaylistRowActions();
+    }, delay));
+  }
+
+  function clampWatchProgress(value) {
+    return Math.max(0, Math.min(100, value));
+  }
+
+  /* Returns a 0-100 progress value, or null when the row offers no evidence yet
+     (e.g. still hydrating) so callers can avoid misclassifying it. */
+  function playlistWatchProgress(card) {
+    const rowData = card.data ?? card.__data?.data;
+    const overlays = rowData?.thumbnailOverlays;
+    if (Array.isArray(overlays)) {
+      const progress = clampWatchProgress(Core.watchProgressFromOverlays(overlays));
+      return progress;
+    }
+
+    const progressIndicators = card.querySelectorAll([
+      "ytd-thumbnail-overlay-resume-playback-renderer #progress",
+      "yt-thumbnail-overlay-progress-bar-view-model #progress",
+      "yt-thumbnail-overlay-progress-bar-view-model [role='progressbar']",
+      "yt-thumbnail-overlay-progress-bar-view-model [class*='WatchedProgressBarSegment']"
+    ].join(","));
+
+    for (const indicator of progressIndicators) {
+      const candidates = [
+        indicator.getAttribute("aria-valuenow"),
+        indicator.getAttribute("aria-label"),
+        indicator.getAttribute("title"),
+        indicator.getAttribute("style"),
+        indicator.textContent
+      ];
+      for (const candidate of candidates) {
+        const progress = Core.parseWatchProgress(candidate);
+        if (progress !== null) {
+          return clampWatchProgress(progress);
+        }
+      }
+
+      /* Rect measurement forces layout, so it stays the last resort. Hidden
+         rows measure 0 wide and fail the trackWidth guard into the null path. */
+      const trackWidth = indicator.parentElement?.getBoundingClientRect?.().width;
+      const progressWidth = indicator.getBoundingClientRect?.().width;
+      if (trackWidth > 0 && progressWidth >= 0) {
+        return clampWatchProgress((progressWidth / trackWidth) * 100);
+      }
+    }
+
+    const statusIndicators = card.querySelectorAll([
+      "[aria-label*='watched' i]",
+      "[title*='watched' i]",
+      "ytd-thumbnail-overlay-playback-status-renderer"
+    ].join(","));
+    for (const indicator of statusIndicators) {
+      const candidates = [
+        indicator.getAttribute("aria-valuenow"),
+        indicator.getAttribute("aria-label"),
+        indicator.getAttribute("title"),
+        indicator.textContent
+      ];
+      for (const candidate of candidates) {
+        const progress = Core.parseWatchProgress(candidate);
+        if (progress !== null) {
+          return clampWatchProgress(progress);
+        }
+      }
+    }
+
+    /* Absence of a DOM progress indicator is not proof of 0%: YouTube may hydrate
+       the link well before an intersection-driven progress overlay. Keep such a
+       row visible until explicit renderer or DOM evidence arrives. */
+    if (progressIndicators.length) return null;
+    return null;
+  }
+
+  function resolvePlaylistWatchProgress(card, preferCached = false) {
+    const videoId = Core.extractVideoId(card.querySelector(VIDEO_LINK_SELECTOR)?.href, location.origin);
+    const cached = Number.parseFloat(card.dataset.staytubeWatchProgress);
+    const cachedVideoId = card.dataset.staytubeWatchProgressVideoId;
+    const cacheIsCurrent = Boolean(videoId && cachedVideoId === videoId && Number.isFinite(cached));
+    if (preferCached && cacheIsCurrent) return cached;
+    const progress = playlistWatchProgress(card);
+    if (progress !== null) return progress;
+    return cacheIsCurrent ? cached : null;
+  }
+
+  function playlistRowIsUnavailable(card) {
+    const title = card.querySelector(":scope #video-title")?.textContent;
+    if (Core.isUnavailableListingTitle(title)) return true;
+    const thumbnail = card.querySelector(":scope ytd-thumbnail img, :scope yt-image img");
+    return Boolean(thumbnail?.src?.includes("no_thumbnail"));
+  }
+
+  /* Read/write separation: classification may measure layout and collapsing
+     invalidates it, so resolve every row's progress before touching any class. */
+  function updatePlaylistRowsCollapse(cards, preferCached = false) {
+    const rows = [...cards].filter((card) => card.matches("ytd-playlist-video-renderer"));
+    if (playlistUnavailableOnly) {
+      const availability = rows.map(playlistRowIsUnavailable);
+      rows.forEach((card, index) => {
+        card.classList.toggle("staytube-playlist-collapsed", !availability[index]);
+      });
+      return;
+    }
+    const progresses = rows.map((card) => resolvePlaylistWatchProgress(card, preferCached));
+    rows.forEach((card, index) => {
+      const progress = progresses[index];
+      if (progress !== null) {
+        card.dataset.staytubeWatchProgress = String(progress);
+        const videoId = Core.extractVideoId(
+          card.querySelector(VIDEO_LINK_SELECTOR)?.href,
+          location.origin
+        );
+        if (videoId) card.dataset.staytubeWatchProgressVideoId = videoId;
+      }
+      card.classList.toggle(
+        "staytube-playlist-collapsed",
+        progress !== null
+          && (progress < playlistProgressGate.min || progress > playlistProgressGate.max)
+      );
+    });
+  }
+
+  const playlistProgressObserver = new MutationObserver((records) => {
+    for (const record of records) {
+      if (isStayTubeMutationTarget(record.target)) continue;
+      const card = record.target.closest?.("ytd-playlist-video-renderer");
+      if (card) pendingCollapseCards.add(card);
+    }
+    schedulePlaylistCollapseUpdate();
+  });
+
+  function schedulePlaylistCollapseUpdate() {
+    if (collapseUpdateScheduled || !pendingCollapseCards.size) return;
+    collapseUpdateScheduled = true;
+    requestAnimationFrame(() => {
+      collapseUpdateScheduled = false;
+      const cards = [...pendingCollapseCards].filter((card) => card.isConnected);
+      pendingCollapseCards.clear();
+      updatePlaylistRowsCollapse(cards);
+    });
+  }
+
+  function observePlaylistProgress(root) {
+    if (root.nodeType !== Node.ELEMENT_NODE && root.nodeType !== Node.DOCUMENT_NODE) return;
+    const containers = [...root.querySelectorAll("ytd-playlist-video-list-renderer")];
+    const enclosing = root.closest?.("ytd-playlist-video-list-renderer");
+    if (enclosing) containers.push(enclosing);
+    for (const container of containers) {
+      if (observedPlaylistContainers.has(container)) continue;
+      observedPlaylistContainers.add(container);
+      playlistProgressObserver.observe(container, Core.PLAYLIST_PROGRESS_OBSERVER_OPTIONS);
+    }
+  }
+
+  function updatePlaylistCollapseControls() {
+    const controls = document.querySelector("body > .staytube-playlist-collapse-controls");
+    if (!controls) return;
+    const bounds = [
+      { selector: ".staytube-playlist-collapse-min", value: playlistProgressGate.min },
+      { selector: ".staytube-playlist-collapse-max", value: playlistProgressGate.max }
+    ];
+    for (const { selector, value } of bounds) {
+      const slider = controls.querySelector(selector);
+      if (!slider) continue;
+      slider.value = String(value);
+      slider.disabled = playlistUnavailableOnly;
+      const readout = slider.closest("label")?.querySelector(".staytube-playlist-collapse-gate-value");
+      if (readout) readout.textContent = `${value}%`;
+    }
+    controls.querySelector(".staytube-playlist-collapse-unavailable")
+      ?.setAttribute("aria-pressed", String(playlistUnavailableOnly));
+  }
+
+  function applyPlaylistCollapseFilters(preferCached = true) {
+    collapseFilterPreferCached &&= preferCached;
+    if (collapseFilterScheduled) return;
+    collapseFilterScheduled = true;
+    requestAnimationFrame(() => {
+      collapseFilterScheduled = false;
+      const useCached = collapseFilterPreferCached;
+      collapseFilterPreferCached = true;
+      updatePlaylistRowsCollapse(
+        document.querySelectorAll("ytd-playlist-video-renderer"),
+        useCached
+      );
+      updatePlaylistCollapseControls();
+    });
+  }
+
+  function ensurePlaylistCollapseControls() {
+    const existing = document.querySelector("body > .staytube-playlist-collapse-controls");
+    const isPlaylistPage = location.pathname === "/playlist" && Boolean(
+      document.querySelector("ytd-playlist-video-list-renderer, ytd-playlist-video-renderer")
+    );
+    if (!isPlaylistPage) {
+      existing?.remove();
+      return;
+    }
+    if (existing) {
+      updatePlaylistCollapseControls();
+      return;
+    }
+
+    const controls = document.createElement("div");
+    controls.className = "staytube-playlist-collapse-controls";
+    controls.setAttribute("role", "group");
+    controls.setAttribute("aria-label", "Show playlist videos by watch progress");
+
+    const heading = document.createElement("span");
+    heading.className = "staytube-playlist-collapse-heading";
+    heading.textContent = "Show videos watched:";
+    controls.append(heading);
+
+    const createGateControl = (kind, prefix, ariaLabel, title) => {
+      const wrapper = document.createElement("label");
+      wrapper.className = "staytube-playlist-collapse-gate";
+      wrapper.title = title;
+      const text = document.createElement("span");
+      text.textContent = prefix;
+      const slider = document.createElement("input");
+      slider.type = "range";
+      slider.min = "0";
+      slider.max = "100";
+      slider.step = "1";
+      slider.className = `staytube-playlist-collapse-slider staytube-playlist-collapse-${kind}`;
+      slider.setAttribute("aria-label", ariaLabel);
+      const value = document.createElement("span");
+      value.className = "staytube-playlist-collapse-gate-value";
+      wrapper.append(text, slider, value);
+      controls.append(wrapper);
+      return slider;
+    };
+
+    const minSlider = createGateControl(
+      "min",
+      "at least",
+      "Minimum percent watched to keep visible",
+      "Raise to hide less-watched videos; 0% keeps unwatched videos visible"
+    );
+    const maxSlider = createGateControl(
+      "max",
+      "at most",
+      "Maximum percent watched to keep visible",
+      "Lower to hide more-watched videos; 100% keeps fully watched videos visible"
+    );
+
+    /* The bounds clamp each other so the gate can never invert: dragging one
+       slider past the other pushes it along instead of undoing its setting. */
+    minSlider.addEventListener("input", () => {
+      playlistProgressGate.min = Number(minSlider.value);
+      playlistProgressGate.max = Math.max(playlistProgressGate.max, playlistProgressGate.min);
+      applyPlaylistCollapseFilters();
+    });
+    maxSlider.addEventListener("input", () => {
+      playlistProgressGate.max = Number(maxSlider.value);
+      playlistProgressGate.min = Math.min(playlistProgressGate.min, playlistProgressGate.max);
+      applyPlaylistCollapseFilters();
+    });
+
+    const unavailable = document.createElement("button");
+    unavailable.className = "staytube-playlist-collapse-unavailable";
+    unavailable.type = "button";
+    unavailable.textContent = "Unavailable only";
+    unavailable.title = "Show only deleted or private videos; suspends the watch-progress gate";
+    unavailable.addEventListener("click", () => {
+      playlistUnavailableOnly = !playlistUnavailableOnly;
+      applyPlaylistCollapseFilters(playlistUnavailableOnly);
+    });
+    controls.append(unavailable);
+
+    const reset = document.createElement("button");
+    reset.className = "staytube-playlist-collapse-reset";
+    reset.type = "button";
+    reset.textContent = "Show all";
+    reset.title = "Reset the filters to show every video";
+    reset.addEventListener("click", () => {
+      playlistProgressGate.min = 0;
+      playlistProgressGate.max = 100;
+      playlistUnavailableOnly = false;
+      applyPlaylistCollapseFilters();
+    });
+    controls.append(reset);
+
+    document.body.append(controls);
+    updatePlaylistCollapseControls();
   }
 
   function prepareCard(card, videoId) {
     ensurePlaylistRemoveButton(card);
+    ensurePlaylistCleanLink(card);
+    updatePlaylistRowsCollapse([card]);
     const existingContainer = card.querySelector(":scope .staytube-listing-details");
     if (card.dataset.staytubeVideoId === videoId && existingContainer) {
       const dateCanMoveToNativeSlot = Boolean(
@@ -952,10 +1363,24 @@
     if (root.nodeType !== Node.ELEMENT_NODE && root.nodeType !== Node.DOCUMENT_NODE) return;
     if (root.nodeType === Node.ELEMENT_NODE && root.matches(VIDEO_LINK_SELECTOR)) inspectLink(root);
     if (root.nodeType === Node.ELEMENT_NODE) {
-      const playlistRow = root.closest("ytd-playlist-video-renderer");
-      if (playlistRow) ensurePlaylistRemoveButton(playlistRow);
+      const playlistRow = root.closest(
+        "ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer"
+      );
+      if (playlistRow) {
+        ensurePlaylistRemoveButton(playlistRow);
+        ensurePlaylistCleanLink(playlistRow);
+        updatePlaylistRowsCollapse([playlistRow]);
+      }
     }
-    root.querySelectorAll("ytd-playlist-video-renderer").forEach(ensurePlaylistRemoveButton);
+    const playlistRows = root.querySelectorAll(
+      "ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer"
+    );
+    playlistRows.forEach((row) => {
+      ensurePlaylistRemoveButton(row);
+      ensurePlaylistCleanLink(row);
+    });
+    updatePlaylistRowsCollapse(playlistRows);
+    observePlaylistProgress(root);
     root.querySelectorAll(VIDEO_LINK_SELECTOR).forEach(inspectLink);
   }
 
@@ -963,9 +1388,11 @@
     scanScheduled = false;
     ensureTranscriptButton();
     ensureWatchPublishedTime();
+    ensurePlaylistCollapseControls();
     const roots = [...pendingScanRoots];
     pendingScanRoots.clear();
     roots.forEach(scanRoot);
+    updatePlaylistCollapseControls();
   }
 
   function scheduleScan(root = document) {
@@ -990,7 +1417,9 @@
       ".staytube-native-date-host",
       ".staytube-watch-published",
       ".staytube-copy-transcript",
-      ".staytube-playlist-remove"
+      ".staytube-playlist-remove",
+      ".staytube-playlist-open-clean",
+      ".staytube-playlist-collapse-controls"
     ].join(",")));
   }
 
@@ -1001,6 +1430,12 @@
         scheduleScan(record.target);
         continue;
       }
+      const removedPlaylistAction = [...record.removedNodes].some((node) => (
+        node.nodeType === Node.ELEMENT_NODE
+        && (node.matches?.(".staytube-playlist-remove, .staytube-playlist-open-clean")
+          || node.querySelector?.(".staytube-playlist-remove, .staytube-playlist-open-clean"))
+      ));
+      if (removedPlaylistAction) schedulePlaylistActionReconciliation();
       for (const node of record.addedNodes) {
         if (isStayTubeMutationTarget(node)) continue;
         scheduleScan(node.nodeType === Node.ELEMENT_NODE ? node : record.target);

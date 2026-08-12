@@ -7,6 +7,8 @@ A small Manifest V3 browser extension that adds two details to YouTube video car
 - Complete listing titles that wrap naturally instead of being truncated with an ellipsis.
 - A direct one-click Watch Later button when a supported thumbnail is hovered or keyboard-focused.
 - A one-click remove button on playlist rows when the playlist is editable.
+- A button on playlist rows that opens the video in a new tab without the playlist context.
+- A playlist-page watch-progress gate: two clamped sliders keep only videos watched between the chosen minimum and maximum visible (e.g. at least 80% to surface nearly-finished videos), plus an "Unavailable only" mode that isolates deleted/private entries, with a one-click reset.
 - The exact published date and time beside the relative age in a playing video's description.
 - A watch-page button that copies the transcript as Markdown with timestamped chapter headings interspersed.
 
@@ -45,3 +47,7 @@ The metadata parser and listing-selector regressions use Node's built-in test ru
 ```sh
 node --test tests/*.test.js
 ```
+
+## Chrome Web Store release
+
+The store-ready privacy policy, promotional images, screenshot design references, package builder, and click-to-copy dashboard answers live in `store-assets`, `assets`, `PRIVACY.md`, and `scripts/build-store-package.sh`. Real screenshots must be captured from the unpacked extension before submission. Open `store-assets/submission-helper.html` in a browser for the submission checklist and one-click field copying.
