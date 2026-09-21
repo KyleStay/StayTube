@@ -247,8 +247,8 @@ test("transcript Markdown intersperses timestamped chapter headings", () => {
     { title: "Introduction", startMs: 0 },
     { title: "Details", startMs: 65000 }
   ]), [
-    "## 0s Introduction", "", "Hello world",
-    "## 1m 5s Details", "", "Next section"
+    "## 0s: Introduction", "", "0s: Hello world", "",
+    "## 1m 5s: Details", "", "1m 5s: Next section"
   ].join("\n"));
 });
 
@@ -257,7 +257,77 @@ test("transcript chapter timestamps use hour, minute, and second units", () => {
     { startMs: 3723000, text: "Long-form section" }
   ], [
     { title: "Deep dive", startMs: 3723000 }
-  ]), "## 1h 2m 3s Deep dive\n\nLong-form section");
+  ]), "## 1h 2m 3s: Deep dive\n\n1h 2m 3s: Long-form section");
+});
+
+test("transcript sentences retain timestamps without chapters and across unit boundaries", () => {
+  assert.equal(Core.formatTranscriptMarkdown([
+    { startMs: 0, text: "Start." },
+    { startMs: 59999, text: "Before a minute." },
+    { startMs: 60000, text: "One minute." },
+    { startMs: 3600000, text: "One hour." },
+    { startMs: 3723000, text: "Later." }
+  ], []), [
+    "0s: Start.", "59s: Before a minute.", "1m 0s: One minute.",
+    "1h 0m 0s: One hour.", "1h 2m 3s: Later."
+  ].join("\n"));
+});
+
+test("sentences span caption fragments and use the caption containing their first word", () => {
+  assert.equal(Core.formatTranscriptMarkdown([
+    { startMs: 0, text: "Hello" },
+    { startMs: 1000, text: "world. next" },
+    { startMs: 2000, text: "sentence!" },
+    { startMs: 3000, text: 'He said “Really?”' },
+    { startMs: 4000, text: "Yes. All done." }
+  ], []), [
+    "0s: Hello world.", "1s: next sentence!", "3s: He said “Really?”",
+    "4s: Yes.", "4s: All done."
+  ].join("\n"));
+});
+
+test("sentence timestamps do not split names, abbreviations or decimals", () => {
+  assert.equal(Core.formatTranscriptMarkdown([
+    { startMs: 0, text: "Dr." },
+    { startMs: 1000, text: "Smith paid 3.50 dollars. The U.S." },
+    { startMs: 2000, text: "price was lower, e.g. 2.50. Done." }
+  ], []), [
+    "0s: Dr. Smith paid 3.50 dollars.",
+    "1s: The U.S. price was lower, e.g. 2.50.", "2s: Done."
+  ].join("\n"));
+});
+
+test("unpunctuated captions form one passage without inventing sentence breaks", () => {
+  assert.equal(Core.formatTranscriptMarkdown([
+    { startMs: 0, text: " " },
+    { startMs: 1000, text: "  this is\n" },
+    { startMs: 2000, text: "one continuing" },
+    { startMs: 3000, text: "passage" }
+  ], []), "1s: this is one continuing passage");
+});
+
+test("chapter boundaries flush unfinished sentences without losing text", () => {
+  assert.equal(Core.formatTranscriptMarkdown([
+    { startMs: 0, text: "The first" },
+    { startMs: 1000, text: "part" },
+    { startMs: 2000, text: "A new" },
+    { startMs: 3000, text: "chapter." }
+  ], [{ startMs: 2000, title: "Details" }]),
+  "0s: The first part\n\n## 2s: Details\n\n2s: A new chapter.");
+});
+
+test("sentence punctuation without spaces is supported", () => {
+  assert.equal(Core.formatTranscriptMarkdown([
+    { startMs: 1000, text: "你好。再见！" }
+  ], []), "1s: 你好。\n1s: 再见！");
+});
+
+test("chapters after the final caption use the same timestamp format and spacing", () => {
+  assert.equal(Core.formatTranscriptMarkdown([
+    { startMs: 0, text: "Opening" }
+  ], [{ startMs: 65000, title: "End credits" }]),
+  "0s: Opening\n\n## 1m 5s: End credits");
+  assert.equal(Core.formatTranscriptMarkdown([], []), "");
 });
 
 test("transcript failure prompt contains useful context without requesting secrets", () => {

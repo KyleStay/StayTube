@@ -61,14 +61,22 @@ yt-lockup-view-model .ytLockupMetadataViewModelTextContainer > .staytube-listing
   color: inherit;
   font: inherit;
   margin-inline-start: 0.4em;
-  white-space: nowrap;
+  white-space: normal;
+}
+
+/* The animated watch metadata uses separate view-count and date containers. */
+ytd-watch-info-text #info-container:has(.staytube-watch-published),
+ytd-watch-info-text #date-text:has(.staytube-watch-published) {
+  flex-wrap: wrap !important;
+  height: auto !important;
+  white-space: normal !important;
 }
 
 .staytube-error {
   font-style: italic;
 }
 
-html[dark],
+html[dark] .staytube-listing-details,
 [dark] .staytube-listing-details {
   color: var(--yt-spec-text-secondary, #aaa);
 }
@@ -273,21 +281,118 @@ html.staytube-finding-remove-command ytd-popup-container {
 .staytube-copy-transcript {
   cursor: pointer;
   flex: 0 0 auto;
-  margin-inline-start: 8px !important;
+  height: 40px;
+  min-height: 40px;
   white-space: nowrap;
 }
 
-.staytube-copy-transcript .ytSpecButtonShapeNextTextContent {
-  margin-inline-start: 6px !important;
+/* Use these defaults only until YouTube's native action styles hydrate. The
+   native classes and yt-light-shape must own the background and gradient rim. */
+.staytube-copy-transcript:not(.staytube-native-button) {
+  align-items: center;
+  appearance: none;
+  background: var(--yt-spec-badge-chip-background, rgba(0, 0, 0, 0.05));
+  border: 0;
+  border-radius: 20px;
+  box-sizing: border-box;
+  color: var(--yt-spec-text-primary, #0f0f0f);
+  display: inline-flex;
+  font: 500 14px/20px Roboto, Arial, sans-serif;
+  gap: 6px;
+  justify-content: center;
+  padding: 8px 12px;
 }
 
-.staytube-copy-transcript .ytSpecTouchFeedbackShapeFill {
-  background-color: currentColor !important;
+.staytube-copy-transcript svg {
+  display: block;
+  fill: currentColor;
+  flex: 0 0 24px;
+}
+
+.staytube-copy-transcript:not(.staytube-native-button):hover {
+  background: var(--yt-spec-button-chip-background-hover, rgba(0, 0, 0, 0.1));
+}
+
+.staytube-copy-transcript:focus-visible {
+  outline: 2px solid var(--yt-spec-call-to-action, #065fd4);
+  outline-offset: 2px;
+}
+
+html[dark] .staytube-copy-transcript:not(.staytube-native-button) {
+  background: var(--yt-spec-badge-chip-background, #272727);
+  color: var(--yt-spec-text-primary, #f1f1f1);
+}
+
+html[dark] .staytube-copy-transcript:not(.staytube-native-button):hover {
+  background: var(--yt-spec-button-chip-background-hover, #3f3f3f);
 }
 
 .staytube-copy-transcript:disabled {
   cursor: wait;
   opacity: 0.65;
+}
+
+.staytube-copy-transcript > :is(yt-light-shape, yt-touch-feedback-shape) {
+  pointer-events: none;
+}
+
+/* Let the complete action group move below the channel before wrapping its
+   buttons. Shrinking it into the leftover space beside the owner strands the
+   transcript button on a separate line. */
+ytd-watch-metadata #top-row:has(.staytube-copy-transcript) {
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 12px 16px;
+}
+
+ytd-watch-metadata #top-row:has(.staytube-copy-transcript) > #owner {
+  flex: 0 1 auto !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  max-width: 100%;
+}
+
+ytd-watch-metadata #actions:has(.staytube-copy-transcript) {
+  flex: 0 1 auto !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  width: max-content !important;
+}
+
+ytd-watch-metadata :is(#actions-inner, #actions):has(> .staytube-copy-transcript),
+ytm-slim-video-metadata-section-renderer .slim-video-metadata-actions:has(> .staytube-copy-transcript) {
+  align-items: center !important;
+  display: flex !important;
+  /* YouTube uses a column here. display:flex alone preserves that direction. */
+  flex-flow: row wrap !important;
+  gap: 8px;
+  justify-content: flex-start !important;
+  max-width: 100%;
+}
+
+ytd-watch-metadata #actions-inner:has(> .staytube-copy-transcript) {
+  /* Include our button in the group's preferred width instead of inheriting
+     YouTube's width calculation for only its own menu. */
+  width: max-content !important;
+  align-items: flex-start !important;
+}
+
+/* The native menu must occupy only its own controls' width, leaving room for
+   our sibling button. Its default full width otherwise forces another line. */
+ytd-watch-metadata #actions-inner:has(> .staytube-copy-transcript) > #menu,
+ytd-watch-metadata #actions:has(> .staytube-copy-transcript) > #menu {
+  flex: 0 1 auto !important;
+  width: max-content !important;
+}
+
+ytd-watch-metadata #actions-inner:has(> .staytube-copy-transcript) > #menu,
+ytd-watch-metadata #actions:has(.staytube-copy-transcript) ytd-menu-renderer,
+ytd-watch-metadata #actions:has(.staytube-copy-transcript) #top-level-buttons-computed {
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  row-gap: 8px;
 }
 
 

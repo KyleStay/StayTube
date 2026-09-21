@@ -5,6 +5,14 @@ const test = require("node:test");
 
 const css = fs.readFileSync(path.join(__dirname, "../src/content.css"), "utf8");
 
+test("watch actions override YouTube's column direction and full-width menu", () => {
+  // Setting display:flex without resetting these native rules leaves the
+  // transcript button underneath the menu even when both fit on one line.
+  assert.match(css, /ytd-watch-metadata :is\(#actions-inner, #actions\):has\(> \.staytube-copy-transcript\)[^{]*\{[^}]*flex-flow:\s*row wrap\s*!important/s);
+  assert.match(css, /ytd-watch-metadata #actions-inner:has\(> \.staytube-copy-transcript\) > #menu,[^{]*\{[^}]*flex:\s*0 1 auto\s*!important[^}]*width:\s*max-content\s*!important/s);
+  assert.match(css, /\.staytube-copy-transcript\s*\{[^}]*\bheight:\s*40px[^}]*min-height:\s*40px/s);
+});
+
 test("thumbnail action overlays do not intercept video-link clicks", () => {
   assert.match(css, /yt-thumbnail-hover-overlay-toggle-actions-view-model\s*\{[^}]*pointer-events:\s*none\s*!important/s);
   assert.match(css, /yt-thumbnail-hover-overlay-toggle-actions-view-model\s+:is\(button, a, \[role="button"\]\)\s*\{[^}]*pointer-events:\s*auto\s*!important/s);
@@ -23,4 +31,9 @@ test("playlist collapse controls stay visible and readable in dark mode", () => 
   assert.match(css, /html\[dark\] \.staytube-playlist-collapse-controls\s*\{[^}]*background:\s*var\(--yt-spec-base-background, #212121\)[^}]*color:\s*var\(--yt-spec-text-primary, #fff\)/s);
   assert.match(css, /html\[dark\] \.staytube-playlist-collapse-slider\s*\{[^}]*accent-color:\s*var\(--yt-spec-call-to-action, #3ea6ff\)/s);
   assert.match(css, /html\[dark\] \.staytube-playlist-collapse-reset\s*\{[^}]*background:\s*var\(--yt-spec-badge-chip-background, #3f3f3f\)[^}]*color:\s*var\(--yt-spec-text-primary, #fff\)/s);
+});
+
+test("dark-mode metadata colors never override the whole page", () => {
+  assert.doesNotMatch(css, /(?:^|\n)html\[dark\]\s*[,\{]/);
+  assert.match(css, /html\[dark\] \.staytube-listing-details/);
 });

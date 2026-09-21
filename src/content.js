@@ -34,6 +34,7 @@
   ].join(",");
 
   const WATCH_DATE_SELECTOR = [
+    "ytd-watch-info-text #date-text",
     "ytd-watch-metadata #description-inline-expander #info span",
     "ytd-watch-metadata #description #info span",
     "ytd-watch-info-text #info span",
@@ -182,14 +183,14 @@
   }
 
   function findExistingChannel(card) {
-    const links = card.querySelectorAll([
+    const links = [...card.querySelectorAll([
       "#channel-name a[href]",
       "ytd-channel-name a[href]",
       'a[href*="/channel/"]',
       'a[href*="/@"]',
       'a[href*="/user/"]',
       'a[href*="/c/"]'
-    ].join(","));
+    ].join(","))].filter((link) => !link.closest(".staytube-listing-details"));
 
     for (const link of links) {
       const name = link.getAttribute("title")?.trim() || link.textContent?.trim();
@@ -974,8 +975,8 @@
       if (!published) return;
       published.classList.add("staytube-watch-published");
       published.dataset.videoId = videoId;
-      // Keep the time inside YouTube's visible relative-age span. The collapsed
-      // description hides extra siblings in #info even though they remain in the DOM.
+      // Keep the time inside the visible relative-age span or animated date
+      // container. Collapsed descriptions can hide extra siblings in #info.
       host.append(published);
       exposeWatchPublishedTimeToAssistiveTechnology(host, published);
     } catch {
@@ -986,27 +987,15 @@
   }
 
   function findTranscriptButtonPlacement() {
-    const actions = document.querySelector([
-      "ytd-watch-metadata #actions-inner",
-      "ytd-watch-metadata #actions",
-      "ytm-slim-video-metadata-section-renderer .slim-video-metadata-actions"
-    ].join(","));
-    if (!actions) return null;
-
-    const share = actions.querySelector([
-      "#share-button",
-      "button[aria-label^='Share']",
-      "button[title^='Share']",
-      "[role='button'][aria-label^='Share']"
-    ].join(","));
-    if (!share) return { host: actions, after: null };
-
-    const buttonRow = share.closest("#top-level-buttons-computed") ?? share.parentElement;
-    let shareItem = share;
-    while (shareItem.parentElement && shareItem.parentElement !== buttonRow) {
-      shareItem = shareItem.parentElement;
-    }
-    return { host: buttonRow, after: shareItem };
+    // A selector list returns the first match in document order, so #actions
+    // would win over its #actions-inner child. Keep our button beside the native
+    // menu, outside the rows YouTube measures and moves into its overflow menu.
+    const host = document.querySelector("ytd-watch-metadata #actions-inner")
+      ?? document.querySelector("ytd-watch-metadata #actions")
+      ?? document.querySelector(
+        "ytm-slim-video-metadata-section-renderer .slim-video-metadata-actions"
+      );
+    return host ? { host } : null;
   }
 
   async function copyTranscript(button) {
@@ -1027,10 +1016,13 @@
         const watchUrl = new URL("/watch", location.origin);
         watchUrl.searchParams.set("v", videoId);
         watchUrl.searchParams.set("hl", "en");
-        const watchResponse = await fetch(watchUrl, { credentials: "same-origin", cache: "no-cache" });
+        const watchResponse = await fetch(watchUrl, {
+          credentials: "same-origin", cache: "no-cache", signal: AbortSignal.timeout(15000)
+        });
         if (!watchResponse.ok) throw new Error(`YouTube returned ${watchResponse.status}`);
         transcript = Core.parseTranscriptMetadata(await watchResponse.text(), videoId);
       }
+      if (currentWatchVideoId() !== videoId) return;
       if (!transcript) throw new Error("No transcript is available for this video");
 
       let segments;
@@ -1038,6 +1030,7 @@
       try {
         segments = await fetchCaptionSegments(transcript.captionUrl);
       } catch (error) {
+        if (currentWatchVideoId() !== videoId) return;
         captionError = error;
         try {
           segments = await transcriptSegmentsFromNativePanel(videoId);
@@ -1049,12 +1042,14 @@
           throw panelError;
         }
       }
+      if (currentWatchVideoId() !== videoId) return;
       const markdown = Core.formatTranscriptMarkdown(segments, transcript.chapters);
       if (!markdown) throw captionError ?? new Error("The transcript is empty");
       await writeClipboardText(markdown);
       button.querySelector(".staytube-copy-transcript-label").textContent = "Copied!";
       button.title = "Transcript copied as Markdown";
     } catch (error) {
+      if (currentWatchVideoId() !== videoId) return;
       console.error("StayTube could not copy the transcript", error);
       const prompt = Core.buildTranscriptDebugPrompt({
         error: error?.message ?? String(error),
@@ -1072,6 +1067,9 @@
       }
     } finally {
       button.disabled = false;
+      if (currentWatchVideoId() !== videoId) {
+        button.querySelector(".staytube-copy-transcript-label").textContent = "Copy transcript";
+      }
       transcriptButtonResetTimer = setTimeout(() => {
         if (button.isConnected) {
           button.querySelector(".staytube-copy-transcript-label").textContent = "Copy transcript";
@@ -1089,7 +1087,9 @@
       else captionUrl.searchParams.set("fmt", format);
 
       try {
-        const response = await fetch(captionUrl, { credentials: "same-origin" });
+        const response = await fetch(captionUrl, {
+          credentials: "same-origin", signal: AbortSignal.timeout(15000)
+        });
         const body = await response.text();
         const trimmed = body.trim();
         const contentType = response.headers.get("content-type")?.split(";", 1)[0] ?? "unknown";
@@ -1157,6 +1157,7 @@
   }
 
   function readCurrentNativeTranscript(videoId, baseline = null) {
+    if (currentWatchVideoId() !== videoId) return [];
     for (const panel of nativeTranscriptPanels()) {
       const segments = readNativeTranscriptSegments(panel);
       if (!segments.length) continue;
@@ -1180,6 +1181,13 @@
 
     return new Promise((resolve, reject) => {
       const finishIfReady = () => {
+        if (currentWatchVideoId() !== videoId) {
+          clearTimeout(timeout);
+          clearInterval(poll);
+          observer.disconnect();
+          reject(new Error("The video changed while loading its transcript"));
+          return false;
+        }
         const segments = readCurrentNativeTranscript(videoId, baseline);
         if (!segments.length) return false;
         clearTimeout(timeout);
@@ -1210,6 +1218,7 @@
   }
 
   async function resetStaleNativeTranscriptPanels(videoId) {
+    if (currentWatchVideoId() !== videoId) throw new Error("The video changed while loading its transcript");
     let reset = false;
     for (const panel of nativeTranscriptPanels()) {
       const expanded = panel.getAttribute("visibility")?.includes("EXPANDED");
@@ -1250,6 +1259,7 @@
     // across SPA navigation. Close that stale panel so Show transcript issues a
     // fresh native getTranscript request for the current video.
     await resetStaleNativeTranscriptPanels(videoId);
+    if (currentWatchVideoId() !== videoId) throw new Error("The video changed while loading its transcript");
 
     // Ignore transcript rows that were mounted for a prior SPA destination. A
     // panel is trusted only after StayTube observes it hydrate for this video.
@@ -1307,6 +1317,35 @@
     });
   }
 
+  function syncTranscriptButtonStyle(button, host) {
+    // RYD augments the native dislike button. Our separate action instead
+    // borrows a standalone tonal button's presentation, never its action data.
+    const native = [...host.querySelectorAll("button.ytSpecButtonShapeNextHost.ytSpecButtonShapeNextTonal")]
+      .find((candidate) => candidate !== button
+        && !candidate.className.includes("Segmented")
+        && candidate.classList.contains("ytSpecButtonShapeNextMono"));
+    if (!native) return;
+
+    const appearanceClasses = [...native.classList].filter((name) => (
+      /^ytSpecButtonShapeNext(?:Host|Tonal|Mono|SizeM|EnableBackdropFilterExperiment|MainstageIconSize|MainstagePadding)$/.test(name)
+    ));
+    const className = ["staytube-copy-transcript", "staytube-native-button",
+      "ytSpecButtonShapeNextIconLeading", ...appearanceClasses].join(" ");
+    if (button.className !== className) button.className = className;
+
+    for (const tag of ["yt-touch-feedback-shape", "yt-light-shape"]) {
+      if (button.querySelector(`:scope > ${tag}`)) continue;
+      const decoration = native.querySelector(`:scope > ${tag}`);
+      if (!decoration) continue;
+      const copy = decoration.cloneNode(true);
+      copy.removeAttribute("id");
+      copy.querySelectorAll("[id]").forEach((child) => child.removeAttribute("id"));
+      copy.setAttribute("aria-hidden", "true");
+      if (tag === "yt-light-shape") copy.style.setProperty("--yt-light-wash-opacity", "0");
+      button.append(copy);
+    }
+  }
+
   function ensureTranscriptButton() {
     const videoId = currentWatchVideoId();
     if (!videoId) {
@@ -1315,22 +1354,17 @@
     }
     const placement = findTranscriptButtonPlacement();
     if (!placement) return;
-    const { host, after } = placement;
-    const existing = host.querySelector(":scope > .staytube-copy-transcript");
+    const { host } = placement;
+    const existing = document.querySelector(".staytube-copy-transcript");
     if (existing) {
       existing.dataset.videoId = videoId;
+      if (existing.parentElement !== host) host.append(existing);
+      syncTranscriptButtonStyle(existing, host);
       return;
     }
 
-    document.querySelectorAll(".staytube-copy-transcript").forEach((button) => button.remove());
     const button = document.createElement("button");
-    button.className = [
-      "staytube-copy-transcript",
-      "ytSpecButtonShapeNextHost",
-      "ytSpecButtonShapeNextTonal",
-      "ytSpecButtonShapeNextMono",
-      "ytSpecButtonShapeNextSizeM"
-    ].join(" ");
+    button.className = "staytube-copy-transcript";
     button.type = "button";
     button.title = `Copy transcript with chapter headings as Markdown · StayTube ${EXTENSION_VERSION}`;
     button.setAttribute("aria-label", "Copy transcript with chapter headings as Markdown");
@@ -1338,29 +1372,25 @@
     button.dataset.staytubeVersion = EXTENSION_VERSION;
     button.innerHTML = `
       <span class="ytSpecButtonShapeNextIcon ytSpecButtonShapeNextElevatedContent" aria-hidden="true">
-        <span class="ytIconWrapperHost" style="width: 24px; height: 24px">
-          <svg viewBox="0 0 24 24" width="24" height="24" focusable="false" aria-hidden="true">
-            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"></path>
-          </svg>
-        </span>
+        <svg viewBox="0 0 24 24" width="24" height="24" focusable="false" aria-hidden="true">
+          <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"></path>
+        </svg>
       </span>
-      <span class="ytSpecButtonShapeNextTextContent ytSpecButtonShapeNextElevatedContent">
-        <span class="staytube-copy-transcript-label yt-core-attributed-string">Copy transcript</span>
-      </span>
-      <yt-touch-feedback-shape aria-hidden="true" class="ytSpecTouchFeedbackShapeHost">
-        <span class="ytSpecTouchFeedbackShapeStroke"></span>
-        <span class="ytSpecTouchFeedbackShapeFill"></span>
-      </yt-touch-feedback-shape>`;
+      <span class="ytSpecButtonShapeNextButtonTextContent ytSpecButtonShapeNextElevatedContent">
+        <span class="staytube-copy-transcript-label">Copy transcript</span>
+      </span>`;
     button.addEventListener("click", () => copyTranscript(button));
-    if (after) {
-      after.insertAdjacentElement("afterend", button);
-    } else {
-      host.append(button);
-    }
+    host.append(button);
+    syncTranscriptButtonStyle(button, host);
   }
 
   function scanRoot(root) {
     if (root.nodeType !== Node.ELEMENT_NODE && root.nodeType !== Node.DOCUMENT_NODE) return;
+    // Metadata and menus can hydrate after the video link. Revisit the owning
+    // card even when the added subtree contains no video links of its own.
+    const enclosingCard = root.closest?.(CARD_SELECTORS);
+    const enclosingLink = enclosingCard?.querySelector(VIDEO_LINK_SELECTOR);
+    if (enclosingLink) inspectLink(enclosingLink);
     if (root.nodeType === Node.ELEMENT_NODE && root.matches(VIDEO_LINK_SELECTOR)) inspectLink(root);
     if (root.nodeType === Node.ELEMENT_NODE) {
       const playlistRow = root.closest(
