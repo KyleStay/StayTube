@@ -374,23 +374,71 @@
     }
   }
 
+  function transcriptSentences(segments) {
+    let text = "";
+    const offsets = [];
+    for (const segment of segments) {
+      const caption = segment.text.replace(/\s+/g, " ").trim();
+      if (!caption) continue;
+      if (text) text += " ";
+      offsets.push({ index: text.length, startMs: segment.startMs });
+      text += caption;
+    }
+    if (!text) return [];
+
+    const sentences = [];
+    let start = 0;
+    let captionIndex = 0;
+    const emit = (end) => {
+      while (/\s/.test(text[start] ?? "") && start < end) start += 1;
+      if (start >= end) return;
+      while (captionIndex + 1 < offsets.length && offsets[captionIndex + 1].index <= start) {
+        captionIndex += 1;
+      }
+      sentences.push({ startMs: offsets[captionIndex].startMs, text: text.slice(start, end).trim() });
+      start = end;
+    };
+    // Caption boundaries are not sentence boundaries. Split on punctuation,
+    // including closing quotes, but keep decimals, initials and common titles.
+    const endings = /[.!?]+["'”’»\)\]]*(?=\s|$)|[。！？]+["'”’»\)\]]*/gu;
+    for (const match of text.matchAll(endings)) {
+      const end = match.index + match[0].length;
+      const prefix = text.slice(start, end);
+      if (match[0] === "." && /(?:\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|e\.g|i\.e)|\b[A-Z]|\b(?:[A-Za-z]\.)+[A-Za-z])\.$/i.test(prefix)) continue;
+      emit(end);
+    }
+    emit(text.length);
+    return sentences;
+  }
+
   function formatTranscriptMarkdown(segments, chapters) {
     const orderedChapters = [...chapters].sort((left, right) => left.startMs - right.startMs);
     const output = [];
     let chapterIndex = 0;
+    let chapterSegments = [];
+    const flushSentences = () => {
+      for (const sentence of transcriptSentences(chapterSegments)) {
+        output.push(`${formatTimestamp(sentence.startMs)}: ${sentence.text}`);
+      }
+      chapterSegments = [];
+    };
 
     for (const segment of segments) {
       while (chapterIndex < orderedChapters.length
         && orderedChapters[chapterIndex].startMs <= segment.startMs) {
+        flushSentences();
         const chapter = orderedChapters[chapterIndex];
-        output.push(`## ${formatTimestamp(chapter.startMs)} ${chapter.title}`, "");
+        if (output.length && output.at(-1) !== "") output.push("");
+        output.push(`## ${formatTimestamp(chapter.startMs)}: ${chapter.title}`, "");
         chapterIndex += 1;
       }
-      output.push(segment.text);
+      chapterSegments.push(segment);
     }
+    flushSentences();
     while (chapterIndex < orderedChapters.length) {
       const chapter = orderedChapters[chapterIndex];
-      output.push(`## ${formatTimestamp(chapter.startMs)} ${chapter.title}`, "");
+      if (output.length && output.at(-1) !== "") output.push("");
+      output.push(`## ${formatTimestamp(chapter.startMs)}: ${chapter.title}`, "");
       chapterIndex += 1;
     }
     return output.join("\n").trim();
@@ -401,9 +449,10 @@
 
 Expected behavior:
 - On a YouTube watch page, copy the available transcript as Markdown.
-- Intersperse chapters as headings in the form: ## 1m 23s Chapter title
+- Combine caption fragments into sentences. Prefix each sentence with the time of its first caption, for example: 1h 2m 3s: Transcript sentence.
+- Intersperse chapters as headings in the form: ## 1m 23s: Chapter title
 - Keep working across YouTube single-page navigation.
-- Preserve the native YouTube-style button beside Share.
+- Keep Copy transcript aligned with the watch-page controls.
 
 Failure context:
 - Video URL: ${videoUrl}

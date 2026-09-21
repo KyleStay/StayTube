@@ -139,3 +139,49 @@ test("watch timestamps are guarded against stale SPA navigation results", () => 
   assert.match(source, /currentWatchVideoId\(\) !== videoId \|\| !host\.isConnected/);
   assert.match(source, /staytube-watch-published\[data-video-id=/);
 });
+
+const vm = require("node:vm");
+
+test("rescans never mistake a StayTube fallback channel for native metadata", () => {
+  const ownLink = {
+    href: "https://www.youtube.com/@fallback", textContent: "Fallback channel",
+    getAttribute: () => null, closest: () => ({})
+  };
+  const nativeLink = {
+    href: "https://www.youtube.com/@native", textContent: "Native channel",
+    getAttribute: () => null, closest: () => null
+  };
+  let links = [ownLink];
+  const card = { querySelectorAll: () => links, querySelector: () => null };
+  const context = vm.createContext({});
+  vm.runInContext(source.slice(source.indexOf("  function findExistingChannel("),
+    source.indexOf("  function findMetadataHost(")), context);
+  assert.equal(context.findExistingChannel(card), null);
+  links.push(nativeLink);
+  assert.equal(context.findExistingChannel(card).element, nativeLink);
+});
+
+test("scans revisit initially rendered, appended, and metadata-only hydrated cards", () => {
+  const inspected = new Set();
+  const link = {};
+  const card = { querySelector: () => link };
+  const context = vm.createContext({
+    Node: { ELEMENT_NODE: 1, DOCUMENT_NODE: 9 },
+    CARD_SELECTORS: "cards", VIDEO_LINK_SELECTOR: "links",
+    inspectLink: (element) => inspected.add(element),
+    ensurePlaylistRemoveButton() {}, ensurePlaylistCleanLink() {},
+    updatePlaylistRowsCollapse() {}, observePlaylistProgress() {}
+  });
+  vm.runInContext(source.slice(source.indexOf("  function scanRoot("),
+    source.indexOf("  function scan()")), context);
+  const root = (nodeType, links, owner = null) => ({
+    nodeType, matches: () => false,
+    closest: (selector) => selector === "cards" ? owner : null,
+    querySelectorAll: (selector) => selector === "links" ? links : []
+  });
+  for (const subtree of [root(9, [link]), root(1, [link], card), root(1, [], card)]) {
+    inspected.clear();
+    context.scanRoot(subtree);
+    assert.ok(inspected.has(link));
+  }
+});

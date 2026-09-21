@@ -1,6 +1,6 @@
 # StayTube Listing Details
 
-A small Manifest V3 browser extension that adds two details to YouTube video cards:
+A small Manifest V3 browser extension that adds details and shortcuts to YouTube listings and watch pages:
 
 - A channel name that is always visible and clickable.
 - The video's exact published date and time, displayed in your local timezone.
@@ -39,6 +39,9 @@ The extension only runs on `www.youtube.com` and `m.youtube.com`. It has no anal
 - Deleted, private, age-restricted, region-blocked, or consent-gated videos may not expose metadata. In those cases the card explicitly says which value is unavailable.
 - If YouTube supplies only a calendar date, the extension labels the exact time as unavailable instead of inventing one.
 - If direct timed-text responses are empty or invalid, transcript copying retries through YouTube's native transcript panel. If copying still fails, the button copies a privacy-conscious troubleshooting prompt with the video URL and error without exposing signed caption URLs or authentication data.
+- Copied transcripts join caption fragments into sentences, with one timestamp at each sentence's start, such as `1h 2m 3s: Transcript sentence.` The timestamp comes from the caption containing the sentence's first word. Shorter times omit leading zero units (`5s:`, `2m 10s:`). Captions without punctuation remain one passage per chapter. Chapters use headings such as `## 2m 10s: Chapter title`, separated by blank lines.
+- Copy transcript reuses the native tonal button classes, touch feedback, and `yt-light-shape` gradient rim from a neighboring YouTube action. It upgrades automatically when those controls hydrate.
+- Transcript requests time out instead of leaving the button stuck indefinitely. If you navigate to a different video while a transcript is loading, StayTube discards that result without copying it or opening the new video's transcript panel.
 
 ## Verify
 
