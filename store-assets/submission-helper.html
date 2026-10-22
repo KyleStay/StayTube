@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StayTube Chrome Web Store submission</title>
+  <title>Publish StayTube to the Chrome Web Store</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -64,6 +64,36 @@
     .checklist label { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
     .checklist input { margin-top: 3px; accent-color: var(--brand); }
     code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
+    a { color: var(--brand); text-underline-offset: 3px; }
+    header a { color: #fff; }
+    nav { display: flex; gap: 12px 22px; flex-wrap: wrap; margin-bottom: 24px; }
+    nav a { font-weight: 600; }
+    section { scroll-margin-top: 20px; }
+    .steps { margin: 0; padding: 0 24px 24px 44px; }
+    .steps li { padding: 6px 0; line-height: 1.6; }
+    .notice { border-left: 4px solid var(--brand); background: var(--surface); padding: 16px 20px; margin-bottom: 24px; line-height: 1.6; }
+    .notice p { margin: 0 0 8px; }
+    .notice p:last-child { margin: 0; }
+    .table-wrap { overflow-x: auto; padding: 0 22px 22px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; border-bottom: 1px solid var(--line); padding: 12px 10px; line-height: 1.5; vertical-align: top; }
+    th { color: var(--muted); }
+    td img { display: block; width: 112px; max-height: 80px; object-fit: contain; margin-top: 8px; }
+    input[type="url"], input[type="text"] { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); font: inherit; }
+    .field > p { color: var(--muted); line-height: 1.6; margin-bottom: 0; }
+    details { margin: 12px 22px 22px; line-height: 1.6; }
+    summary { cursor: pointer; font-weight: 600; }
+    .policy { min-height: 300px; }
+    .sources { line-height: 1.8; padding: 0 22px 22px; }
+    .progress { margin: 0 22px 18px; font-weight: 600; }
+    @media print {
+      body { background: white; color: black; }
+      header { background: white; color: black; padding: 12px; }
+      header p, .hint { color: #444; }
+      button, .toast, nav { display: none; }
+      section { box-shadow: none; break-inside: avoid; border-radius: 0; }
+      textarea { min-height: 0; height: auto; }
+    }
     .toast { position: fixed; right: 18px; bottom: 18px; background: var(--brand-2); color: white; padding: 12px 16px; border-radius: 10px; opacity: 0; transform: translateY(12px); transition: .18s ease; pointer-events: none; }
     .toast.show { opacity: 1; transform: translateY(0); }
     @media (max-width: 600px) {
@@ -78,22 +108,67 @@
     <div class="header-inner brand-row">
       <img src="../assets/icons/icon-128.png" alt="StayTube icon">
       <div>
-        <h1>Chrome Web Store submission</h1>
-        <p>StayTube 1.0.3 · Copy each answer directly into the Developer Dashboard.</p>
+        <h1>Publish StayTube</h1>
+        <p>StayTube 1.0.4</p>
       </div>
     </div>
   </header>
   <main>
-    <div class="status" aria-label="Package status">
-      <span class="pill">Manifest V3</span>
-      <span class="pill">Minimum permissions</span>
-      <span class="pill">No remote code</span>
-      <span class="pill">No analytics or ads</span>
-      <span class="pill">Store images included</span>
+    <nav aria-label="Publishing steps">
+      <a href="#files">1. Files</a><a href="#upload">2. Upload</a><a href="#listing">3. Listing</a><a href="#privacy">4. Privacy</a><a href="#distribution-step">5. Distribution</a><a href="#submit">6. Submit</a>
+    </nav>
+    <div class="notice">
+      <p><strong>Finish before submitting:</strong> test the extension on live YouTube and capture real screenshots.</p>
+      <p>The ZIP is built and verified; 81 automated tests passed. Live browser QA was blocked in the build environment. The public GitHub repository provides the homepage, support, and privacy-policy URLs below.</p>
     </div>
 
-    <section>
-      <h2>Store listing</h2>
+    <section id="files">
+      <h2>1. Gather the files</h2>
+      <p>Links below open the prepared files. Keep this guide in the repository so its local links work.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Dashboard upload</th><th scope="col">File</th><th scope="col">Status</th></tr></thead>
+          <tbody>
+            <tr><td>Extension package</td><td><a href="../dist/staytube-1.0.4-chrome-web-store.zip" download>staytube-1.0.4-chrome-web-store.zip</a></td><td>Ready · upload the ZIP as-is</td></tr>
+            <tr><td>Store icon</td><td><a href="../assets/icons/icon-128.png" download>icon-128.png</a><img src="../assets/icons/icon-128.png" alt="StayTube store icon" width="128" height="128"></td><td>Ready · 128×128 PNG</td></tr>
+            <tr><td>Screenshots</td><td>Capture from the installed extension</td><td>Needed · 1–5 images, each 1280×800 or 640×400</td></tr>
+            <tr><td>Small promotional image</td><td><a href="promotional/small-promo.png" download>small-promo.png</a><img src="promotional/small-promo.png" alt="Small promotional image preview"></td><td>Ready · 440×280 · optional, recommended</td></tr>
+            <tr><td>Marquee promotional image</td><td><a href="promotional/marquee-promo.png" download>marquee-promo.png</a></td><td>Ready · 1400×560 · optional</td></tr>
+            <tr><td>Privacy policy</td><td><a href="https://github.com/KyleStay/StayTube/blob/main/PRIVACY.md">Public privacy policy</a> · <a href="privacy-policy.html" download>HTML copy</a></td><td>Ready · hosted in the public repository</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="field">
+        <div class="field-head"><h3>ZIP file path</h3><button data-copy="zip-path">Copy path</button></div>
+        <div class="value" id="zip-path">/Users/kyle/Documents/StayTube/dist/staytube-1.0.4-chrome-web-store.zip</div>
+        <p>On a Mac upload dialog, press Command–Shift–G, paste this path, then select the file.</p>
+      </div>
+      <details>
+        <summary>Live test and screenshot checklist</summary>
+        <ol>
+          <li>In Chrome, open <code>chrome://extensions</code>, turn on <strong>Developer mode</strong>, choose <strong>Load unpacked</strong>, and select <code>/Users/kyle/Documents/StayTube</code>. Reload YouTube tabs.</li>
+          <li>Check the description, date, and comments below the player. Expand the description, load more comments, navigate to another video, and use Back/Forward. Check normal, theater, and full-screen modes.</li>
+          <li>Check a search result and a playlist row, then scroll to load more. Confirm new rows receive dates and controls. Test Watch Later and playlist removal while signed in.</li>
+          <li>Copy a captioned transcript and paste it into a text editor. Check timestamps and chapters. Check dark mode and a narrow window.</li>
+          <li>Capture the actual restored watch page, a listing with publication dates, and playlist tools. Use square corners with no added padding. Exclude private playlist names, account details, and unrelated browser UI. Save PNGs at 1280×800 or 640×400.</li>
+        </ol>
+        <p>The images in <code>store-assets/mockups</code> are design references. Do not upload them as real screenshots. Full release checks are in <a href="../RELEASE.md">RELEASE.md</a>.</p>
+      </details>
+    </section>
+
+    <section id="upload">
+      <h2>2. Create the extension item</h2>
+      <ol class="steps">
+        <li>Open the <a href="https://chrome.google.com/webstore/devconsole/" target="_blank" rel="noopener noreferrer">Chrome Web Store Developer Dashboard</a>.</li>
+        <li>Choose <strong>Add new item</strong>, then choose the <strong>staytube-1.0.4-chrome-web-store.zip</strong> file and upload it.</li>
+        <li>Check the Package tab shows <strong>StayTube Listing Details</strong>, version <strong>1.0.4</strong>, and Manifest V3. Version 1.0.4 is valid for a first store submission.</li>
+        <li>Record the item ID or bookmark its dashboard page. Continue through the remaining tabs below.</li>
+      </ol>
+      <details><summary>If StayTube already has a store item</summary><p>Open that existing item and upload the ZIP using its Package tab. Do not create a duplicate listing. The uploaded version must be higher than the version already in that item.</p></details>
+    </section>
+
+    <section id="listing">
+      <h2>3. Fill in Store listing</h2>
       <p>Use English (United States), Productivity, and the default public distribution.</p>
 
       <div class="field">
@@ -102,16 +177,17 @@
       </div>
       <div class="field">
         <div class="field-head"><h3>Summary <span class="hint">from manifest · 132 characters max</span></h3><button data-copy="summary">Copy</button></div>
-        <div class="value" id="summary">Adds clickable channels and exact local publication times to YouTube listings and playing videos.</div>
+        <div class="value" id="summary">Restores YouTube's classic watch layout and adds exact publication times, channel links, playlist tools, and transcript copying.</div>
       </div>
       <div class="field">
         <div class="field-head"><h3>Detailed description</h3><button data-copy="description">Copy</button></div>
-        <textarea class="long" id="description" readonly>Make YouTube listings and playlists easier to scan, manage, and revisit.
+        <textarea class="long" id="description" readonly>Restore YouTube's classic desktop watch layout and improve video listings and playlists.
 
 StayTube enhances the YouTube interface without ads, accounts, analytics, or a developer-operated server. It works directly on YouTube and keeps its temporary metadata cache inside the current tab.
 
 FEATURES
 
+• Keep the description, publication date, and comments below the player, with recommendations beside it.
 • See the channel name as a visible, clickable link on supported video cards.
 • See the exact publication date and time in your browser's local timezone.
 • Read complete listing titles instead of truncated titles.
@@ -130,7 +206,9 @@ PRIVACY
 
 StayTube processes the current YouTube page, video links, visible metadata, playlist state, and transcript text locally to provide the features above. When more metadata is needed, it requests the relevant YouTube page directly from YouTube over HTTPS. Authenticated same-origin requests may include browser-managed YouTube cookies. It does not send information to the developer or unrelated third parties, and it has no analytics, advertising, or tracking. Transcript text is copied only when you press the copy button.
 
-YouTube is a trademark of Google LLC. Use of this trademark is subject to Google Permissions.</textarea>
+Requires Chrome 111 or newer. Reload existing YouTube tabs after installation or an update. YouTube layout experiments and restricted videos can affect feature availability. Playlist editing and Watch Later require a signed-in YouTube account.
+
+StayTube is an independent extension and is not affiliated with or endorsed by YouTube or Google. YouTube is a trademark of Google LLC.</textarea>
       </div>
       <div class="field">
         <div class="field-head"><h3>Category</h3><button data-copy="category">Copy</button></div>
@@ -141,30 +219,34 @@ YouTube is a trademark of Google LLC. Use of this trademark is subject to Google
         <div class="value" id="language">English (United States)</div>
       </div>
       <div class="field">
-        <div class="field-head"><h3>Homepage URL</h3><button data-copy="homepage">Copy</button></div>
-        <div class="value" id="homepage">https://github.com/KyleStay/StayTube</div>
+        <div class="field-head"><h3><label for="homepage">Homepage URL · optional</label></h3><button data-copy="homepage">Copy</button></div>
+        <input type="url" id="homepage" value="https://github.com/KyleStay/StayTube" readonly>
+        <p><a href="https://github.com/KyleStay/StayTube" target="_blank" rel="noopener noreferrer">Open the public repository</a></p>
       </div>
       <div class="field">
-        <div class="field-head"><h3>Support URL</h3><button data-copy="support">Copy</button></div>
-        <div class="value" id="support">https://github.com/KyleStay/StayTube/issues</div>
+        <div class="field-head"><h3><label for="support">Support URL</label></h3><button data-copy="support">Copy</button></div>
+        <input type="url" id="support" value="https://github.com/KyleStay/StayTube/issues" readonly>
+        <p><a href="https://github.com/KyleStay/StayTube/issues" target="_blank" rel="noopener noreferrer">Open GitHub Issues</a> for support and bug reports. Issues are enabled.</p>
       </div>
+      <div class="field"><h3>Upload the listing images</h3><p>Upload the icon and at least one real screenshot from step 1. Put the restored watch page first. Add the small promo image if desired; marquee and promotional video are optional. Save the Store listing tab.</p></div>
     </section>
 
-    <section>
-      <h2>Privacy practices</h2>
+    <section id="privacy">
+      <h2>4. Fill in Privacy practices</h2>
       <p>These answers intentionally disclose local processing of YouTube content and URLs.</p>
 
       <div class="field">
         <div class="field-head"><h3>Single purpose description</h3><button data-copy="purpose">Copy</button></div>
-        <textarea id="purpose" readonly>StayTube improves the usefulness of YouTube video listings, playlists, and watch pages by adding publication details, channel links, playlist actions and filters, and user-initiated transcript copying directly to the YouTube interface.</textarea>
+        <textarea id="purpose" readonly>StayTube improves the YouTube browsing and viewing interface by restoring the classic desktop watch layout and adding publication details, channel links, playlist tools, and user-initiated transcript copying directly to YouTube.</textarea>
       </div>
       <div class="field">
         <div class="field-head"><h3>clipboardWrite justification</h3><button data-copy="clipboard">Copy</button></div>
-        <textarea id="clipboard" readonly>The permission is used only when the user clicks StayTube's “Copy transcript” button. It writes the selected video's available transcript, formatted as Markdown, to the clipboard. StayTube never reads clipboard contents.</textarea>
+        <textarea id="clipboard" readonly>The permission is used only when the user clicks StayTube's “Copy transcript” button. It writes the selected video's available transcript, formatted as Markdown, or a troubleshooting prompt when captions cannot be loaded. StayTube never reads clipboard contents.</textarea>
       </div>
       <div class="field">
         <div class="field-head"><h3>Host access justification <span class="hint">YouTube content-script access</span></h3><button data-copy="host">Copy</button></div>
         <textarea id="host" readonly>StayTube runs only on https://www.youtube.com/* and https://m.youtube.com/*. This access is required to discover video listings as YouTube dynamically loads them, read the YouTube metadata needed for the visible features, add controls and publication details to the page, and request the corresponding YouTube watch or caption response when the user-facing feature requires it. No access to other websites is requested.</textarea>
+        <p>If the dashboard asks separately for each YouTube match, use this explanation for both. No other site access, clipboard reading, or browsing-history API permission is requested.</p>
       </div>
       <div class="field">
         <div class="field-head"><h3>Remote code justification</h3><button data-copy="remote">Copy</button></div>
@@ -183,36 +265,98 @@ YouTube is a trademark of Google LLC. Use of this trademark is subject to Google
         <div class="value" id="certification">I do not sell or transfer user data to third parties outside the approved use cases.&#10;I do not use or transfer user data for purposes unrelated to the item's single purpose.&#10;I do not use or transfer user data to determine creditworthiness or for lending purposes.</div>
       </div>
       <div class="field">
-        <div class="field-head"><h3>Privacy policy URL</h3><button data-copy="privacy-url">Copy</button></div>
-        <div class="value" id="privacy-url">https://github.com/KyleStay/StayTube/blob/main/PRIVACY.md</div>
+        <div class="field-head"><h3><label for="privacy-url">Privacy policy URL</label></h3><button data-copy="privacy-url">Copy</button></div>
+        <input type="url" id="privacy-url" value="https://github.com/KyleStay/StayTube/blob/main/PRIVACY.md" readonly>
+        <p>Paste this URL into the dashboard. <a href="https://github.com/KyleStay/StayTube/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">Open the public privacy policy</a>. It is readable without signing in; separate website hosting is not needed.</p>
+        <p>Keep <code>PRIVACY.md</code> on the repository's <code>main</code> branch synchronized with the extension's behavior. The HTML copy and policy text below contain the same policy.</p>
       </div>
+      <details><summary>Privacy policy text</summary><div class="field-head"><span>Ready to publish</span><button data-copy="policy-text">Copy policy</button></div><textarea class="policy" id="policy-text" readonly># StayTube Privacy Policy
+
+Effective date: October 22, 2026
+
+StayTube is a browser extension that enhances YouTube listings, playlists, and watch pages. This policy explains the limited data the extension handles to provide those features.
+
+## Data the extension handles
+
+StayTube processes the following information locally in your browser while you use YouTube:
+
+- The address of the YouTube page and video links on that page.
+- YouTube page content needed for the extension&#x27;s features, such as video titles, channel names, publication metadata, playlist state, watch progress indicators, and transcript text.
+- YouTube responses requested for a visible video when publication details or transcript data are needed.
+
+StayTube does not collect names, email addresses, payment information, authentication credentials, or form entries. It does not read browser history outside the YouTube pages on which it runs.
+
+## How the data is used
+
+The extension uses this information only to add its user-facing features to YouTube: the classic desktop watch layout, clickable channel names, exact local publication times, complete titles, playlist tools, Watch Later controls, clean video links, and transcript copying. Transcript text is written to the clipboard only after you press the copy button.
+
+To restore the desktop layout, a bundled script runs in YouTube&#x27;s page context before the page initializes. It changes only the layout experiment settings and native watch-page layout properties needed to keep the description and comments inline. It does not send page data to the extension developer or execute downloaded code.
+
+Metadata requests are sent directly from your browser to YouTube over HTTPS. These authenticated same-origin requests may include browser-managed YouTube cookies. StayTube does not directly read or store those cookies, and it does not send them to the developer or anywhere other than YouTube.
+
+## Storage and retention
+
+StayTube keeps fetched video metadata only in memory for the current browser tab. It does not create a browsing-history database or persist user data after the tab is closed or reloaded. Clipboard contents are controlled by your operating system and browser after you choose to copy a transcript.
+
+## Sharing and sale
+
+StayTube has no developer-operated server, analytics, advertising, tracking, or data broker integration. The developer does not receive, sell, rent, or share your data. Information requested from YouTube remains subject to YouTube&#x27;s own terms and privacy policy.
+
+## Limited Use disclosure
+
+StayTube&#x27;s use of information received from Google services adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements. Data is used only to provide the extension&#x27;s disclosed, user-facing features. It is not used for advertising, credit decisions, or any purpose unrelated to those features, and humans cannot access it through the extension.
+
+## Changes
+
+If StayTube&#x27;s data practices change, this policy and the Chrome Web Store disclosures will be updated before the changed version is published.
+
+## Contact
+
+For support, questions, or privacy requests, open an issue on the [StayTube support page](https://github.com/KyleStay/StayTube/issues).
+</textarea></details>
+      <div class="field"><p>Save the Privacy practices tab. Local-only processing still requires disclosure. The answers above describe the current extension; keep them accurate if its behavior changes.</p></div>
     </section>
 
-    <section>
-      <h2>Distribution and reviewer information</h2>
+    <section id="distribution-step">
+      <h2>5. Set Distribution and Test instructions</h2>
       <div class="field">
         <div class="field-head"><h3>Distribution choices</h3><button data-copy="distribution">Copy labels</button></div>
         <div class="value" id="distribution">Visibility: Public&#10;Regions: All regions&#10;Mature content: No&#10;Pricing: Free</div>
+        <p>These are suggested settings for a free public launch. Confirm the selected regions match where you want to distribute it, then save.</p>
       </div>
       <div class="field">
         <div class="field-head"><h3>Reviewer notes / test instructions</h3><button data-copy="reviewer">Copy</button></div>
-        <textarea id="reviewer" readonly>No account, payment, or special setup is required. Install the extension and open https://www.youtube.com/. On a home, search, history, or playlist page, StayTube adds channel links and publication details as cards load. On an editable playlist, row actions and the watch-progress filter appear. On a watch page with captions, open the description and click “Copy transcript” to test the clipboard feature. The extension contains no remote code and communicates only with YouTube over HTTPS.</textarea>
+        <textarea id="reviewer" readonly>Requires Chrome 111 or newer. Install the extension and reload existing YouTube tabs. Open https://www.youtube.com/watch?v=jNQXAC9IVRw and confirm the description, date, and available comments are below the player. Open another video through a YouTube link to check navigation. On a home, search, or playlist page, inspect an initial card, then scroll to load additional cards and confirm their publication details appear without reloading. Sign in to YouTube to test Watch Later and editing your own playlist; metadata, layout restoration, and public captions do not require an extension account or payment. On a video with captions, click “Copy transcript” and paste into a text editor to check Markdown output. The document-start MAIN-world script only changes YouTube layout settings and native watch layout properties. All extension code is bundled; there is no remote code. Requests go only to YouTube over HTTPS.</textarea>
+        <p>Paste this into the Test instructions tab if available. No extension login or special test credentials are needed. Do not include your personal Google password.</p>
       </div>
     </section>
 
-    <section>
-      <h2>Upload checklist</h2>
-      <p>The package and images are beside this helper in the repository.</p>
+    <section id="submit">
+      <h2>6. Submit for review</h2>
+      <p class="progress" id="progress" role="status" aria-live="polite">0 checks completed</p>
       <div class="checklist">
-        <label><input type="checkbox"> Upload <code>dist/staytube-1.0.3-chrome-web-store.zip</code></label>
+        <label><input type="checkbox"> Upload <code>dist/staytube-1.0.4-chrome-web-store.zip</code></label>
         <label><input type="checkbox"> Upload <code>assets/icons/icon-128.png</code> as the store icon</label>
         <label><input type="checkbox"> Capture and upload real 1280×800 screenshots from the unpacked extension; files in <code>store-assets/mockups</code> are design references only</label>
-        <label><input type="checkbox"> Upload <code>small-promo.png</code> (440×280)</label>
-        <label><input type="checkbox"> Upload <code>marquee-promo.png</code> (1400×560, optional)</label>
-        <label><input type="checkbox"> Leave promotional video blank unless you create one</label>
-        <label><input type="checkbox"> Confirm the GitHub repository and privacy policy are public</label>
-        <label><input type="checkbox"> Save each dashboard tab, then submit for review</label>
+        <label><input type="checkbox"> Complete listing text, category, language, and desired promotional images</label>
+        <label><input type="checkbox"> Save purpose, permission justifications, remote-code answer, and data disclosures</label>
+        <label><input type="checkbox"> Save Distribution and Test instructions</label>
+        <label><input type="checkbox"> Complete the live YouTube checks in <code>RELEASE.md</code></label>
+        <label><input type="checkbox"> Paste the public GitHub privacy-policy URL into Privacy practices</label>
+        <label><input type="checkbox"> Paste the repository homepage and GitHub Issues support URL into Store listing</label>
+        <label><input type="checkbox"> Preview the listing and resolve every dashboard validation error</label>
       </div>
+      <ol class="steps">
+        <li>Choose <strong>Submit for Review</strong> once the required dashboard fields are complete.</li>
+        <li>In the confirmation dialog, keep automatic publishing selected if you want StayTube to go live after approval. Clear that option if you want to publish manually after approval.</li>
+        <li>Confirm submission. Monitor the item's status and developer email for review questions. If approved with deferred publishing, return to the dashboard and publish it within the displayed deadline.</li>
+        <li>After it is public, install from the actual store listing in a separate Chrome profile and test one watch page and one dynamically loaded listing. Confirm the public support and policy links work.</li>
+      </ol>
+      <details><summary>If the dashboard blocks submission</summary><p>Open the indicated tab, fix the missing field, and save. Common missing items are a real screenshot, a reachable privacy-policy URL, an unanswered permission justification, or a data-use certification. For a rejected review, address the specific reason in Google's email and resubmit; do not create another store item.</p></details>
+    </section>
+    <section id="references">
+      <h2>Official references</h2>
+      <div class="sources">Checked October 22, 2026.<br><a href="https://developer.chrome.com/docs/webstore/publish">Upload and submit an extension</a> · <a href="https://developer.chrome.com/docs/webstore/cws-dashboard-listing">Store listing fields</a> · <a href="https://developer.chrome.com/docs/webstore/images">Image sizes</a> · <a href="https://developer.chrome.com/docs/webstore/cws-dashboard-privacy">Privacy fields</a> · <a href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq">Local data disclosure</a></div>
     </section>
   </main>
   <div class="toast" role="status" aria-live="polite">Copied</div>
@@ -220,9 +364,21 @@ YouTube is a trademark of Google LLC. Use of this trademark is subject to Google
     const toast = document.querySelector('.toast');
     let toastTimer;
 
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
     async function copyValue(id, button) {
       const source = document.getElementById(id);
       const value = source.value ?? source.innerText;
+      if (!value.trim()) {
+        showToast('Enter your public URL first');
+        source.focus();
+        return;
+      }
       try {
         await navigator.clipboard.writeText(value.trim());
       } catch {
@@ -232,20 +388,27 @@ YouTube is a trademark of Google LLC. Use of this trademark is subject to Google
         fallback.style.opacity = '0';
         document.body.append(fallback);
         fallback.select();
-        document.execCommand('copy');
-        fallback.remove();
+        let copied = false;
+        try { copied = document.execCommand('copy'); }
+        finally { fallback.remove(); }
+        if (!copied) { showToast('Select the text and press Command–C to copy'); return; }
       }
       const original = button.textContent;
       button.textContent = 'Copied';
-      toast.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
+      showToast('Copied');
       setTimeout(() => { button.textContent = original; }, 1200);
     }
 
     document.querySelectorAll('[data-copy]').forEach((button) => {
       button.addEventListener('click', () => copyValue(button.dataset.copy, button));
     });
+    const checks = [...document.querySelectorAll('.checklist input[type="checkbox"]')];
+    const progress = document.getElementById('progress');
+    function updateProgress() {
+      progress.textContent = `${checks.filter(check => check.checked).length} of ${checks.length} checks completed`;
+    }
+    checks.forEach(check => check.addEventListener('change', updateProgress));
+    updateProgress();
   </script>
 </body>
 </html>

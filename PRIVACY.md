@@ -1,6 +1,6 @@
 # StayTube Privacy Policy
 
-Effective date: August 2, 2026
+Effective date: October 22, 2026
 
 StayTube is a browser extension that enhances YouTube listings, playlists, and watch pages. This policy explains the limited data the extension handles to provide those features.
 
@@ -16,7 +16,9 @@ StayTube does not collect names, email addresses, payment information, authentic
 
 ## How the data is used
 
-The extension uses this information only to add its user-facing features to YouTube: clickable channel names, exact local publication times, complete titles, playlist tools, Watch Later controls, clean video links, and transcript copying. Transcript text is written to the clipboard only after you press the copy button.
+The extension uses this information only to add its user-facing features to YouTube: the classic desktop watch layout, clickable channel names, exact local publication times, complete titles, playlist tools, Watch Later controls, clean video links, and transcript copying. Transcript text is written to the clipboard only after you press the copy button.
+
+To restore the desktop layout, a bundled script runs in YouTube's page context before the page initializes. It changes only the layout experiment settings and native watch-page layout properties needed to keep the description and comments inline. It does not send page data to the extension developer or execute downloaded code.
 
 Metadata requests are sent directly from your browser to YouTube over HTTPS. These authenticated same-origin requests may include browser-managed YouTube cookies. StayTube does not directly read or store those cookies, and it does not send them to the developer or anywhere other than YouTube.
 
@@ -38,4 +40,4 @@ If StayTube's data practices change, this policy and the Chrome Web Store disclo
 
 ## Contact
 
-Questions or privacy requests can be submitted through the [StayTube support page](https://github.com/KyleStay/StayTube/issues).
+For support, questions, or privacy requests, open an issue on the [StayTube support page](https://github.com/KyleStay/StayTube/issues).

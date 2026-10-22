@@ -103,7 +103,8 @@ test("native button styling hydrates once without copying action state or duplic
   const nativeClasses = new Set([
     "ytSpecButtonShapeNextHost", "ytSpecButtonShapeNextTonal", "ytSpecButtonShapeNextMono",
     "ytSpecButtonShapeNextSizeM", "ytSpecButtonShapeNextIconButton",
-    "ytSpecButtonShapeNextEnableBackdropFilterExperiment", "ytSpecButtonShapeNextMainstagePadding"
+    "ytSpecButtonShapeNextEnableBackdropFilterExperiment", "ytSpecButtonShapeNextMainstagePadding",
+    "ytSpecButtonShapeNextMainstageIconSizeV2"
   ]);
   nativeClasses.contains = nativeClasses.has.bind(nativeClasses);
   const native = { className: [...nativeClasses].join(" "), classList: nativeClasses,
@@ -123,6 +124,7 @@ test("native button styling hydrates once without copying action state or duplic
   context.syncTranscriptButtonStyle(button, host);
   assert.match(button.className, /staytube-native-button/);
   assert.match(button.className, /ytSpecButtonShapeNextIconLeading/);
+  assert.match(button.className, /ytSpecButtonShapeNextMainstageIconSizeV2/);
   assert.doesNotMatch(button.className, /IconButton/);
   assert.equal(copies, 2);
   assert.equal(decorations.get("yt-light-shape").attributes.id, undefined);

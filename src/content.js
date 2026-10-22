@@ -910,6 +910,21 @@
     prepareCard(card, videoId);
   }
 
+  const observedWatchDates = new WeakSet();
+  const watchDateObserver = new MutationObserver((records) => {
+    for (const record of records) scheduleScan(record.target);
+  });
+
+  function observeWatchDates() {
+    // The rolling date can hydrate only its aria-label. Keep this observation
+    // scoped to date candidates; player and thumbnail aria labels churn often.
+    document.querySelectorAll(`${WATCH_DATE_SELECTOR},${WATCH_DATE_FALLBACK_SELECTOR}`).forEach((host) => {
+      if (observedWatchDates.has(host)) return;
+      observedWatchDates.add(host);
+      watchDateObserver.observe(host, { attributes: true, attributeFilter: ["aria-label"] });
+    });
+  }
+
   function currentWatchVideoId() {
     return Core.extractVideoId(location.href, location.href);
   }
@@ -943,10 +958,8 @@
     if (!currentLabel) return;
     const previousDetail = host.dataset.staytubeWatchAccessibleDetail;
     const detail = `Published ${published.textContent.trim()}`;
-    host.setAttribute(
-      "aria-label",
-      Core.replaceAccessibleLabelDetail(currentLabel, previousDetail, detail)
-    );
+    const label = Core.replaceAccessibleLabelDetail(currentLabel, previousDetail, detail);
+    if (label !== currentLabel) host.setAttribute("aria-label", label);
     host.dataset.staytubeWatchAccessibleDetail = detail;
   }
 
@@ -958,7 +971,13 @@
     }
 
     const current = document.querySelector(`.staytube-watch-published[data-video-id="${videoId}"]`);
-    if (current) return;
+    if (current) {
+      exposeWatchPublishedTimeToAssistiveTechnology(current.parentElement, current);
+      return;
+    }
+    // A recycled watch page can keep the previous video's timestamp while the
+    // new metadata request is pending or unavailable.
+    removeWatchPublishedTimes();
 
     const host = findWatchDateHost();
     if (!host || host.dataset.staytubeWatchPending === videoId) return;
@@ -1327,7 +1346,7 @@
     if (!native) return;
 
     const appearanceClasses = [...native.classList].filter((name) => (
-      /^ytSpecButtonShapeNext(?:Host|Tonal|Mono|SizeM|EnableBackdropFilterExperiment|MainstageIconSize|MainstagePadding)$/.test(name)
+      /^ytSpecButtonShapeNext(?:Host|Tonal|Mono|SizeM|EnableBackdropFilterExperiment|MainstageIconSize(?:V2)?|MainstagePadding)$/.test(name)
     ));
     const className = ["staytube-copy-transcript", "staytube-native-button",
       "ytSpecButtonShapeNextIconLeading", ...appearanceClasses].join(" ");
@@ -1416,6 +1435,7 @@
 
   function scan() {
     scanScheduled = false;
+    observeWatchDates();
     ensureTranscriptButton();
     ensureWatchPublishedTime();
     ensurePlaylistCollapseControls();
@@ -1453,7 +1473,7 @@
     ].join(",")));
   }
 
-  const mutationObserver = new MutationObserver((records) => {
+  function handlePageMutations(records) {
     for (const record of records) {
       if (isStayTubeMutationTarget(record.target)) continue;
       if (record.type === "attributes") {
@@ -1466,12 +1486,19 @@
           || node.querySelector?.(".staytube-playlist-remove, .staytube-playlist-open-clean"))
       ));
       if (removedPlaylistAction) schedulePlaylistActionReconciliation();
+      const removedWatchControl = [...record.removedNodes].some((node) => (
+        node.nodeType === Node.ELEMENT_NODE
+        && (node.matches?.(".staytube-watch-published, .staytube-copy-transcript")
+          || node.querySelector?.(".staytube-watch-published, .staytube-copy-transcript"))
+      ));
+      if (removedWatchControl) scheduleScan(record.target);
       for (const node of record.addedNodes) {
         if (isStayTubeMutationTarget(node)) continue;
         scheduleScan(node.nodeType === Node.ELEMENT_NODE ? node : record.target);
       }
     }
-  });
+  }
+  const mutationObserver = new MutationObserver(handlePageMutations);
   mutationObserver.observe(document.documentElement, Core.LISTING_MUTATION_OBSERVER_OPTIONS);
   document.addEventListener("click", (event) => {
     if (!event.isTrusted || !event.target.closest?.(NATIVE_TRANSCRIPT_BUTTON_SELECTOR)) return;

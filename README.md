@@ -3,6 +3,7 @@
 A small Manifest V3 browser extension that adds details and shortcuts to YouTube listings and watch pages:
 
 - A channel name that is always visible and clickable.
+- The classic desktop watch layout, with the description, publication date, and comments below the player and recommendations beside it.
 - The video's exact published date and time, displayed in your local timezone.
 - Complete listing titles that wrap naturally instead of being truncated with an ellipsis.
 - A direct one-click Watch Later button when a supported thumbnail is hovered or keyboard-focused.
@@ -32,6 +33,7 @@ The extension only runs on `www.youtube.com` and `m.youtube.com`. It has no anal
 
 ## Behavior and limitations
 
+- Desktop layout restoration takes effect on a fresh YouTube page load. After installing or updating StayTube, reload existing YouTube tabs. It disables the grid and side-rail layout experiments before YouTube initializes, then resets native side-menu properties when watch pages hydrate or change videos. It uses YouTube's own inline description and comments; it does not copy or relocate those panels. Mobile retains its native layout. Chrome 111 or newer is required.
 - Times are rendered in the browser's local timezone; hover the timestamp to see its source ISO value.
 - Hour- and day-old uploads keep their relative age and add the browser-local time. Week- and month-old uploads keep their relative age and add month, day, and local time. Year-old uploads use `#y ago YYYY Mon dd h:mm AM/PM`, such as `4y ago 2022 Jul 03 2:15 PM`. Visible timestamps omit timezone abbreviations, commas, and bullet separators.
 - Cards are loaded shortly before they enter view and lookups are limited to four at a time.
@@ -42,6 +44,7 @@ The extension only runs on `www.youtube.com` and `m.youtube.com`. It has no anal
 - Copied transcripts join caption fragments into sentences, with one timestamp at each sentence's start, such as `1h 2m 3s: Transcript sentence.` The timestamp comes from the caption containing the sentence's first word. Shorter times omit leading zero units (`5s:`, `2m 10s:`). Captions without punctuation remain one passage per chapter. Chapters use headings such as `## 2m 10s: Chapter title`, separated by blank lines.
 - Copy transcript reuses the native tonal button classes, touch feedback, and `yt-light-shape` gradient rim from a neighboring YouTube action. It upgrades automatically when those controls hydrate.
 - Transcript requests time out instead of leaving the button stuck indefinitely. If you navigate to a different video while a transcript is loading, StayTube discards that result without copying it or opening the new video's transcript panel.
+- Publication dates updated only through an accessible label are discovered automatically. Watch timestamps and transcript buttons are restored when YouTube removes them during a re-render, and the previous video's publication time is cleared before a new lookup finishes.
 
 ## Verify
 
@@ -53,4 +56,8 @@ node --test tests/*.test.js
 
 ## Chrome Web Store release
 
-The store-ready privacy policy, promotional images, screenshot design references, package builder, and click-to-copy dashboard answers live in `store-assets`, `assets`, `PRIVACY.md`, and `scripts/build-store-package.sh`. Real screenshots must be captured from the unpacked extension before submission. Open `store-assets/submission-helper.html` in a browser for the submission checklist and one-click field copying.
+Run `sh scripts/build-store-package.sh` to run the tests, check JavaScript syntax, and build `dist/staytube-1.0.4-chrome-web-store.zip` with a SHA-256 checksum. The archive includes only manifest-declared runtime files and icons.
+
+Open `store-assets/submission-helper.html` for listing copy, permission justifications, and reviewer instructions. See [RELEASE.md](RELEASE.md) for verification evidence and the remaining submission checks. The images in `store-assets/mockups` are design references; capture real screenshots before submission.
+
+Use the public [repository](https://github.com/KyleStay/StayTube) as the store homepage, [GitHub Issues](https://github.com/KyleStay/StayTube/issues) for support, and [PRIVACY.md](https://github.com/KyleStay/StayTube/blob/main/PRIVACY.md) as the privacy-policy URL.

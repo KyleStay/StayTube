@@ -73,3 +73,74 @@ test("legacy watch dates still receive their timestamp inside the visible age sp
   assert.equal(host.textContent, "21 hours ago");
   assert.equal(host.children[0].parentElement, host);
 });
+
+test("native age-label refreshes retain exactly one accessible publication detail", async () => {
+  const host = element("21 hours ago", { "aria-label": "21 hours ago" });
+  const context = watchContext(host, "ytd-watch-info-text #date-text");
+  await context.ensureWatchPublishedTime();
+  host.setAttribute("aria-label", "22 hours ago");
+  await context.ensureWatchPublishedTime();
+  await context.ensureWatchPublishedTime();
+  assert.equal(host.children.length, 1);
+  assert.match(host.getAttribute("aria-label"), /^22 hours ago.*Published Sep 07 8:00 AM/);
+  assert.equal(host.getAttribute("aria-label").match(/Published/g).length, 1);
+});
+
+test("stale watch timestamps disappear before the next video's metadata resolves", async () => {
+  const host = element("21 hours ago", { "aria-label": "21 hours ago" });
+  const context = watchContext(host, "ytd-watch-info-text #date-text");
+  await context.ensureWatchPublishedTime();
+  host.children[0].dataset.videoId = "oldVideo123";
+  let finish;
+  context.metadataFor = () => new Promise(resolve => { finish = resolve; });
+  const pending = context.ensureWatchPublishedTime();
+  assert.equal(host.children.length, 0);
+  assert.equal(host.getAttribute("aria-label"), "21 hours ago");
+  finish({ publishedAt: "2026-09-07T12:00:00Z" });
+  await pending;
+  assert.equal(host.children.length, 1);
+});
+
+test("date observers cover empty, appended, and aria-only hydrated hosts once", () => {
+  const hosts = [element()];
+  const observed = [];
+  const scheduled = [];
+  let notify;
+  const context = vm.createContext({
+    WATCH_DATE_SELECTOR: "dates", WATCH_DATE_FALLBACK_SELECTOR: "fallbacks",
+    document: { querySelectorAll: () => hosts },
+    scheduleScan: host => scheduled.push(host),
+    MutationObserver: class {
+      constructor(callback) { notify = callback; }
+      observe(host, options) { observed.push({ host, options }); }
+    }
+  });
+  vm.runInContext(source.slice(source.indexOf("  const observedWatchDates"),
+    source.indexOf("  function currentWatchVideoId()")), context);
+  context.observeWatchDates();
+  hosts.push(element());
+  context.observeWatchDates();
+  context.observeWatchDates();
+  assert.equal(observed.length, 2);
+  assert.deepEqual(Array.from(observed[0].options.attributeFilter), ["aria-label"]);
+  hosts[0].setAttribute("aria-label", "21 hours ago");
+  notify([{ target: hosts[0] }]);
+  assert.deepEqual(scheduled, [hosts[0]]);
+});
+
+test("native removal of watch controls schedules recovery without an added node", () => {
+  const scheduled = [];
+  const context = vm.createContext({
+    Node: { ELEMENT_NODE: 1 }, isStayTubeMutationTarget: () => false,
+    scheduleScan: host => scheduled.push(host), schedulePlaylistActionReconciliation() {}
+  });
+  vm.runInContext(source.slice(source.indexOf("  function handlePageMutations("),
+    source.indexOf("  const mutationObserver =")), context);
+  for (const control of [".staytube-watch-published", ".staytube-copy-transcript"]) {
+    const host = {};
+    context.handlePageMutations([{ target: host, type: "childList", addedNodes: [],
+      removedNodes: [{ nodeType: 1, matches: selector => selector.includes(control) }] }]);
+    assert.equal(scheduled.at(-1), host);
+  }
+  assert.equal(scheduled.length, 2);
+});
