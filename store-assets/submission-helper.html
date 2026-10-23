@@ -84,6 +84,8 @@
     details { margin: 12px 22px 22px; line-height: 1.6; }
     summary { cursor: pointer; font-weight: 600; }
     .policy { min-height: 300px; }
+    .screenshot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 16px; }
+    .screenshot-grid img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; }
     .sources { line-height: 1.8; padding: 0 22px 22px; }
     .progress { margin: 0 22px 18px; font-weight: 600; }
     @media print {
@@ -109,7 +111,7 @@
       <img src="../assets/icons/icon-128.png" alt="StayTube icon">
       <div>
         <h1>Publish StayTube</h1>
-        <p>StayTube 1.0.4</p>
+        <p>StayTube 1.0.5 source handoff</p>
       </div>
     </div>
   </header>
@@ -118,8 +120,8 @@
       <a href="#files">1. Files</a><a href="#upload">2. Upload</a><a href="#listing">3. Listing</a><a href="#privacy">4. Privacy</a><a href="#distribution-step">5. Distribution</a><a href="#submit">6. Submit</a>
     </nav>
     <div class="notice">
-      <p><strong>Finish before submitting:</strong> test the extension on live YouTube and capture real screenshots.</p>
-      <p>The ZIP is built and verified; 81 automated tests passed. Live browser QA was blocked in the build environment. The public GitHub repository provides the homepage, support, and privacy-policy URLs below.</p>
+      <p><strong>Published runtime unchanged:</strong> the current source matches published 1.0.5. The screenshots and listing tools are available below; this source-only update does not require another extension upload.</p>
+      <p>85 automated source/helper tests passed. The screenshot run checked the restored watch layout, publication timestamps, and transcript control on live YouTube. Complete the remaining behavior checks before submitting. The public GitHub repository provides the homepage, support, and privacy-policy URLs below.</p>
     </div>
 
     <section id="files">
@@ -129,9 +131,9 @@
         <table>
           <thead><tr><th scope="col">Dashboard upload</th><th scope="col">File</th><th scope="col">Status</th></tr></thead>
           <tbody>
-            <tr><td>Extension package</td><td><a href="../dist/staytube-1.0.4-chrome-web-store.zip" download>staytube-1.0.4-chrome-web-store.zip</a></td><td>Ready · upload the ZIP as-is</td></tr>
+            <tr><td>Extension package</td><td><a href="../dist/staytube-1.0.5-chrome-web-store.zip" download>staytube-1.0.5-chrome-web-store.zip</a></td><td>Build before use · no new runtime publication needed</td></tr>
             <tr><td>Store icon</td><td><a href="../assets/icons/icon-128.png" download>icon-128.png</a><img src="../assets/icons/icon-128.png" alt="StayTube store icon" width="128" height="128"></td><td>Ready · 128×128 PNG</td></tr>
-            <tr><td>Screenshots</td><td>Capture from the installed extension</td><td>Needed · 1–5 images, each 1280×800 or 640×400</td></tr>
+            <tr><td>Screenshots</td><td><a href="#screenshots">Preview and download the three screenshots</a></td><td>Ready · three 1280×800 PNGs</td></tr>
             <tr><td>Small promotional image</td><td><a href="promotional/small-promo.png" download>small-promo.png</a><img src="promotional/small-promo.png" alt="Small promotional image preview"></td><td>Ready · 440×280 · optional, recommended</td></tr>
             <tr><td>Marquee promotional image</td><td><a href="promotional/marquee-promo.png" download>marquee-promo.png</a></td><td>Ready · 1400×560 · optional</td></tr>
             <tr><td>Privacy policy</td><td><a href="https://github.com/KyleStay/StayTube/blob/main/PRIVACY.md">Public privacy policy</a> · <a href="privacy-policy.html" download>HTML copy</a></td><td>Ready · hosted in the public repository</td></tr>
@@ -140,9 +142,20 @@
       </div>
       <div class="field">
         <div class="field-head"><h3>ZIP file path</h3><button data-copy="zip-path">Copy path</button></div>
-        <div class="value" id="zip-path">/Users/kyle/Documents/StayTube/dist/staytube-1.0.4-chrome-web-store.zip</div>
+        <div class="value" id="zip-path">/Users/kyle/Documents/StayTube/dist/staytube-1.0.5-chrome-web-store.zip</div>
         <p>On a Mac upload dialog, press Command–Shift–G, paste this path, then select the file.</p>
       </div>
+      <div class="field" id="screenshots">
+        <h3>Screenshots</h3>
+        <p>The initial included images were captured from StayTube 1.0.4 on live YouTube in a signed-out, disposable Chrome profile. Retaking replaces the preview PNGs and current download bundle using the active source version; the original versioned bundle remains preserved. Upload these PNGs directly to the Store listing tab, with the watch layout first.</p>
+        <p><a href="screenshots/staytube-store-screenshots.zip" download>Download all three screenshots (ZIP)</a>. Extract the archive and upload the PNGs.</p>
+        <div class="screenshot-grid">
+          <a href="screenshots/01-classic-watch-layout.png" download><img src="screenshots/01-classic-watch-layout.png" alt="StayTube classic watch page with description and comments below the player" width="1280" height="800">1. Classic watch layout</a>
+          <a href="screenshots/02-listing-publication-details.png" download><img src="screenshots/02-listing-publication-details.png" alt="YouTube search results with StayTube publication times" width="1280" height="800">2. Listing publication details</a>
+          <a href="screenshots/03-description-and-transcript.png" download><img src="screenshots/03-description-and-transcript.png" alt="Expanded YouTube description and StayTube transcript control" width="1280" height="800">3. Description and transcript</a>
+        </div>
+      </div>
+      <details><summary>Retake the screenshots</summary><p>Double-click <code>Capture Store Screenshots.command</code> in Finder, or run <code>node scripts/capture-store-screenshots.cjs</code> from the project folder. It uses the installed Codex Playwright runtime and Chrome Extension Test Runner skill, checks StayTube's live controls, saves fresh PNGs, and closes its disposable Chrome profile. If the agent workspace denies process checks, host execution is required.</p></details>
       <details>
         <summary>Live test and screenshot checklist</summary>
         <ol>
@@ -157,12 +170,12 @@
     </section>
 
     <section id="upload">
-      <h2>2. Create the extension item</h2>
+      <h2>2. Use the existing extension item</h2>
       <ol class="steps">
         <li>Open the <a href="https://chrome.google.com/webstore/devconsole/" target="_blank" rel="noopener noreferrer">Chrome Web Store Developer Dashboard</a>.</li>
-        <li>Choose <strong>Add new item</strong>, then choose the <strong>staytube-1.0.4-chrome-web-store.zip</strong> file and upload it.</li>
-        <li>Check the Package tab shows <strong>StayTube Listing Details</strong>, version <strong>1.0.4</strong>, and Manifest V3. Version 1.0.4 is valid for a first store submission.</li>
-        <li>Record the item ID or bookmark its dashboard page. Continue through the remaining tabs below.</li>
+        <li>Open the existing StayTube item, ID <code>dendmbjihbflekjlbfofggaiipplagap</code> (<a href="https://chromewebstore.google.com/detail/staytube-listing-details/dendmbjihbflekjlbfofggaiipplagap">public listing</a>). Do not create a duplicate listing.</li>
+        <li>The verified published runtime is <strong>1.0.5</strong>. This source-only landing has no new runtime changes to upload. For a later meaningful update, build the normal store ZIP and verify its version exceeds both the published version and all private uploaded drafts.</li>
+        <li>Keep the authoritative public listing URL and item ID in future release handoffs. Listing screenshots can be reviewed separately from a new runtime package.</li>
       </ol>
       <details><summary>If StayTube already has a store item</summary><p>Open that existing item and upload the ZIP using its Package tab. Do not create a duplicate listing. The uploaded version must be higher than the version already in that item.</p></details>
     </section>
@@ -335,7 +348,7 @@ For support, questions, or privacy requests, open an issue on the [StayTube supp
       <h2>6. Submit for review</h2>
       <p class="progress" id="progress" role="status" aria-live="polite">0 checks completed</p>
       <div class="checklist">
-        <label><input type="checkbox"> Upload <code>dist/staytube-1.0.4-chrome-web-store.zip</code></label>
+        <label><input type="checkbox"> Upload <code>dist/staytube-1.0.5-chrome-web-store.zip</code></label>
         <label><input type="checkbox"> Upload <code>assets/icons/icon-128.png</code> as the store icon</label>
         <label><input type="checkbox"> Capture and upload real 1280×800 screenshots from the unpacked extension; files in <code>store-assets/mockups</code> are design references only</label>
         <label><input type="checkbox"> Complete listing text, category, language, and desired promotional images</label>
