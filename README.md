@@ -54,9 +54,11 @@ The metadata parser and listing-selector regressions use Node's built-in test ru
 node --test tests/*.test.js
 ```
 
+Three real 1280×800 store screenshots are included under `store-assets/screenshots/`. To retake them, double-click `Capture Store Screenshots.command` in Finder, or run `node scripts/capture-store-screenshots.cjs` in a normal Terminal. The tool uses the installed Codex workspace Playwright runtime and the Chrome Extension Test Runner skill, launches only a disposable Chrome for Testing profile, checks StayTube's page controls, and verifies browser/profile cleanup. `node scripts/capture-store-screenshots.cjs --check` checks prerequisites without launching a browser. Host execution is required when the agent workspace blocks the runner's `/bin/ps` ownership preflight.
+
 ## Chrome Web Store release
 
-Run `sh scripts/build-store-package.sh` to run the tests, check JavaScript syntax, and build `dist/staytube-1.0.4-chrome-web-store.zip` with a SHA-256 checksum. The archive includes only manifest-declared runtime files and icons.
+Run `sh scripts/build-store-package.sh` to run the tests, check JavaScript syntax, and build `dist/staytube-1.0.5-chrome-web-store.zip` with a SHA-256 checksum. The archive includes only manifest-declared runtime files and icons.
 
 Open `store-assets/submission-helper.html` for listing copy, permission justifications, and reviewer instructions. See [RELEASE.md](RELEASE.md) for verification evidence and the remaining submission checks. The images in `store-assets/mockups` are design references; capture real screenshots before submission.
 
