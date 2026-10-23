@@ -1,6 +1,6 @@
 # StayTube 1.0.5 source and store handoff
 
-Prepared October 22, 2026. The package and three real store screenshots are ready. Complete the remaining behavior checks before submission. The public GitHub repository provides the homepage, support, and privacy-policy URLs.
+Prepared October 22, 2026. The screenshots and source-build workflow are available. Current runtime matches published 1.0.5; this source-only reconciliation does not require another extension upload. The public GitHub repository provides the homepage, support, and privacy-policy URLs.
 
 ## Changes
 
@@ -30,7 +30,7 @@ Prepared October 22, 2026. The package and three real store screenshots are read
 6. Enter the public [repository](https://github.com/KyleStay/StayTube) as the homepage, [Issues](https://github.com/KyleStay/StayTube/issues) for support, and [PRIVACY.md](https://github.com/KyleStay/StayTube/blob/main/PRIVACY.md) as the privacy policy. These URLs are populated in the HTML guide. Keep the policy on `main` synchronized with the extension's behavior.
 7. Use `store-assets/submission-helper.html` for the listing and privacy answers. Disclose Website content and Web history processing, including local processing; justify clipboardWrite and the two YouTube content-script matches. Confirm the public policy and dashboard describe the same behavior. Upload the ZIP, 128-pixel icon, real screenshots, and optional promotional images, then submit through the developer account.
 
-The extension has not been uploaded or submitted. Google reviews store submissions independently.
+The official signed Chrome Web Store package was verified as version 1.0.5 on October 23, 2026. No upload or submission was performed by this source-landing workflow. Future updates must use the existing item and exceed every version already uploaded there.
 
 ## Store references
 

@@ -37,10 +37,17 @@ async function cleanup() {
   cleaning = (async () => {
     if (!launch) return;
     if (browser) {
+      let closeDeadline;
       try {
-        const session = await browser.newBrowserCDPSession();
-        await session.send("Browser.close");
+        await Promise.race([
+          (async () => {
+            const session = await browser.newBrowserCDPSession();
+            await session.send("Browser.close");
+          })(),
+          new Promise(resolve => { closeDeadline = setTimeout(resolve, 2000); })
+        ]);
       } catch { /* Verify shutdown with the runner's exact ownership record. */ }
+      finally { clearTimeout(closeDeadline); }
     }
     python(["-c", [
       "import json,sys",
@@ -176,7 +183,7 @@ async function main() {
       "with zipfile.ZipFile(folder / sys.argv[2], 'w', zipfile.ZIP_DEFLATED) as archive:",
       " for name in ['01-classic-watch-layout.png','02-listing-publication-details.png','03-description-and-transcript.png']:",
       "  archive.write(folder / name, name)"
-    ].join("\n"), output, `staytube-${manifest.version}-store-screenshots.zip`]);
+    ].join("\n"), output, "staytube-store-screenshots.zip"]);
     console.log(`Done. Review the three images in ${output} before uploading.`);
   } finally {
     await cleanup();
