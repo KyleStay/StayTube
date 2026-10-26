@@ -18,7 +18,7 @@ module.exports = async function verifyListingLayout(page) {
     }
   };
   await page.route(pattern, handler);
-  async function check(id, expectedViews) {
+  async function check(id, expectedViews, expectedAge) {
     const card = page.locator(`#${id}`);
     await card.locator("time[datetime]").waitFor();
     const layout = await card.evaluate(element => {
@@ -31,6 +31,7 @@ module.exports = async function verifyListingLayout(page) {
         timeTop: time.getBoundingClientRect().top,
         viewsBottom: views.getBoundingClientRect().bottom,
         views: views.textContent,
+        timeText: time.textContent,
         channelBottom: channel?.getBoundingClientRect().bottom,
         visibleSeparators: [...element.querySelectorAll(".ytContentMetadataViewModelDelimiter")]
           .filter(separator => separator.getClientRects().length).length,
@@ -41,6 +42,7 @@ module.exports = async function verifyListingLayout(page) {
     assert.equal(layout.count, 1, `${id}: duplicate timestamp`);
     assert.ok(layout.timeTop >= layout.viewsBottom - 1, `${id}: timestamp shares the views line`);
     assert.equal(layout.views, expectedViews);
+    if (expectedAge) assert.ok(layout.timeText.startsWith(expectedAge), `${id}: stale relative age`);
     if (layout.channelBottom) assert.ok(layout.timeTop >= layout.channelBottom - 1, `${id}: timestamp shares the channel line`);
     assert.equal(layout.visibleSeparators, 0, `${id}: orphaned date separator`);
     if (layout.playlist) assert.equal(layout.cleanLinks, 1, `${id}: playlist controls must remain idempotent`);
@@ -64,10 +66,10 @@ module.exports = async function verifyListingLayout(page) {
       element.insertAdjacentHTML("beforeend", '<yt-content-metadata-view-model><div class="ytContentMetadataViewModelMetadataRow"><span class="ytContentMetadataViewModelMetadataText views">7,654 views</span><span class="ytContentMetadataViewModelDelimiter">•</span><span class="ytContentMetadataViewModelMetadataText">4 days ago</span></div></yt-content-metadata-view-model>');
     });
     await page.locator("#lazy .staytube-native-published").waitFor();
-    await check("lazy", "7,654 views");
+    await check("lazy", "7,654 views", "4 days ago");
     await page.locator("#lazy .staytube-native-date-host").evaluate(element => { element.textContent = "5 days ago"; });
     await page.locator("#lazy .staytube-native-published").waitFor();
-    await check("lazy", "7,654 views");
+    await check("lazy", "7,654 views", "5 days ago");
     // Recycling a card must not retain a stale layout marker or timestamp.
     await page.locator("#later > a[href*=watch]").evaluate(link => { link.href = "/watch?v=recycled001"; });
     await page.locator('#later[data-staytube-video-id="recycled001"] time[datetime]').waitFor();

@@ -334,7 +334,9 @@
     if (!host) return false;
 
     const ageLabel = host.getAttribute("aria-label") || host.textContent?.trim() || "";
-    const relativeText = host.dataset.staytubeRelativeText || host.textContent?.trim() || ageLabel;
+    const relativeText = host.querySelector(".staytube-native-published")
+      ? host.dataset.staytubeRelativeText || ageLabel
+      : ageLabel;
     host.dataset.staytubeRelativeText = relativeText;
     const time = makePublishedTime(value, {
       unit: Core.relativeAgeUnit(relativeText),
