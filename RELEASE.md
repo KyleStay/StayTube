@@ -1,8 +1,10 @@
-# StayTube 1.0.6 theater-mode update
+# StayTube 1.0.7 listing-layout update
 
-Prepared October 26, 2026. Version 1.0.6 restores native theater mode when YouTube's layout experiment disables the size button and keyboard shortcut. The public GitHub repository provides the homepage, support, and privacy-policy URLs. This local update has not been uploaded to the store.
+Prepared October 26, 2026. Version 1.0.7 places listing release dates on their own line and includes the native theater-mode fix. The public GitHub repository provides the homepage, support, and privacy-policy URLs. This local update has not been uploaded to the store.
 
 ## Changes
+
+- Show the release timestamp on its own full-width line in classic cards, modern lockups, playlist rows, and fallback details. Preserve native channel links/view counts and hide only the adjacent date separator. Newly appended, hydrated, and recycled rows keep the same layout without duplicate dates or controls.
 
 - Keep the native theater button and `T` shortcut available on desktop and narrow windows. Theater mode uses YouTube's full-width player; toggling back restores normal size. StayTube does not force theater mode on or overwrite the user's selected size.
 - Restore YouTube's native classic desktop watch layout: description, publication date, and comments below the player; recommendations in the sidebar. A bundled MAIN-world script runs at document start to disable alternative watch-layout experiments. It also resets native side-menu properties on watch-page hydration and navigation, without moving or duplicating description/comment nodes.
@@ -12,12 +14,13 @@ Prepared October 26, 2026. Version 1.0.6 restores native theater mode when YouTu
 
 ## Artifacts and verified checks
 
-- Upload archive: `dist/staytube-1.0.6-chrome-web-store.zip`.
-- SHA-256: `dist/staytube-1.0.6-chrome-web-store.zip.sha256`.
+- Upload archive: `dist/staytube-1.0.7-chrome-web-store.zip`.
+- SHA-256: `dist/staytube-1.0.7-chrome-web-store.zip.sha256`.
 - Rebuild: `bash .ci/local.sh` (Node.js and Python 3.9+). All CI runs locally.
 - Source/helper tests cover initial/appended/hydrated listing discovery, early YouTube configuration, native side-menu resets, theater rollout flags and selected size, SPA navigation, watch-control recovery, captions, and clipboard behavior.
-- All 86 source/helper tests passed, along with JavaScript syntax, ZIP/source equality, archive integrity, and checksum verification. The local-only CI guard passed. The full `.ci/local.sh` wrapper could not open `/dev/fd/62` for its logging process substitution in the agent sandbox; its guard and build/test commands were run directly and passed. Existing CI files were preserved.
-- Live 1.0.6 theater verification passed at viewport widths 1280, 1600, and 900 pixels: the player matched the available page width (1265, 1585, and 885 pixels after the scrollbar), the size button and `T` both entered/exited theater mode, and the control remained available after a YouTube SPA video change. Theater did not enter browser full screen. Owned browser processes and disposable profiles were verified at zero after cleanup.
+- `bash .ci/local.sh` passed: all 86 source/helper tests, JavaScript syntax, archive integrity and package construction. ZIP/source equality and checksum verification are also required before upload. The logger uses a regular file instead of process substitution and preserves failing build exit codes.
+- The listing browser fixture passed for initial classic/lockup/fallback/playlist cards, appended playlist rows, delayed link/metadata hydration, native rehydration, and recycled rows at 1280 and 640 pixels. Checks require the timestamp below the view count/channel, intact view counts, no orphan separator, and one timestamp/playlist control. Current live YouTube screenshots were visually inspected to confirm the separate release line.
+- Live 1.0.7 theater verification passed at viewport widths 1280, 1600, and 900 pixels: the player matched the available page width (1265, 1585, and 885 pixels after the scrollbar), the size button and `T` both entered/exited theater mode, and the control remained available after a YouTube SPA video change. Theater did not enter browser full screen. Owned browser processes and disposable profiles were verified at zero after cleanup.
 - All bundled JavaScript passes `node --check`. The ZIP passes integrity and manifest-file checks and contains only nine runtime files: the manifest, four icons, three JavaScript files, and one CSS file.
 - Manifest summary is 128 characters. Icons are 16, 32, 48, and 128 pixels square. Existing promotional images are 440×280 and 1400×560.
 - A fresh public YouTube watch response still parses the channel and exact publication timestamp. The layout switch and inline-description/comment conditions were inspected in YouTube's current public UI source. These source checks do not establish live visual compatibility with every account experiment.
@@ -38,7 +41,7 @@ Prepared October 26, 2026. Version 1.0.6 restores native theater mode when YouTu
 - Canonical listing: [StayTube Listing Details](https://chromewebstore.google.com/detail/staytube-listing-details/dendmbjihbflekjlbfofggaiipplagap).
 - Store/browser: Chrome Web Store; publisher: `staytechco`; item ID: `dendmbjihbflekjlbfofggaiipplagap`.
 - Public listing and Google's signed CRX3 package both report 1.0.5, verified October 26, 2026. The CRX3 signature was verified with an identity-matching public key; public-key SHA-256: `34d3c198715b4a9b15e566088ffb060f9812bd6b927eb32647304ae599a4e370`.
-- Upload the 1.0.6 ZIP to that existing item after confirming there is no equal or higher private uploaded draft. The public check does not reveal private draft versions. No private key is needed, and the development directory's unpacked ID is not evidence of the store identity.
+- Upload the 1.0.7 ZIP to that existing item after confirming there is no equal or higher private uploaded draft. The public check does not reveal private draft versions. No private key is needed, and the development directory's unpacked ID is not evidence of the store identity.
 
 ## Store references
 
@@ -49,4 +52,4 @@ Prepared October 26, 2026. Version 1.0.6 restores native theater mode when YouTu
 
 ## Source reconciliation — October 23, 2026
 
-The October 23 source reconciliation matched published 1.0.5 and added the screenshot workflow without changing runtime behavior. The included store screenshots retain their original 1.0.4 capture provenance. Version 1.0.6 subsequently adds the theater-mode fix. Build output names follow the manifest version. No store submission is performed by these scripts.
+The October 23 source reconciliation matched published 1.0.5 and added the screenshot workflow without changing runtime behavior. The original versioned screenshot bundle retains its 1.0.4 capture provenance. Current preview PNGs are retaken from 1.0.7 to show the new listing layout; 1.0.7 also includes the theater-mode fix developed for 1.0.6. Build output names follow the manifest version. No store submission is performed by these scripts.

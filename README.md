@@ -5,7 +5,7 @@ A small Manifest V3 browser extension that adds details and shortcuts to YouTube
 - A channel name that is always visible and clickable.
 - The classic desktop watch layout, with the description, publication date, and comments below the player and recommendations beside it.
 - Native full-width theater mode, using YouTube's size button or the `T` shortcut, including when YouTube's layout experiment disables it.
-- The video's exact published date and time, displayed in your local timezone.
+- The video's exact published date and time, displayed in your local timezone on its own line below the native listing metadata.
 - Complete listing titles that wrap naturally instead of being truncated with an ellipsis.
 - A direct one-click Watch Later button when a supported thumbnail is hovered or keyboard-focused.
 - A one-click remove button on playlist rows when the playlist is editable.
@@ -18,7 +18,7 @@ It supports standard grids and lists, search results, sidebar recommendations, p
 
 Watch History's modern horizontal rows keep the exact publication time in the native text column and turn the channel name already shown by YouTube into a channel link, avoiding duplicated channel text or details displaced beside the action menu.
 
-Where YouTube already provides a clickable channel and a relative-date field, the extension reuses the channel and replaces the relative date in place. A compact extra row is only added when a listing type does not provide native metadata slots.
+Where YouTube already provides a clickable channel and a relative-date field, the extension reuses the channel and replaces the relative date in place, giving that date its own full-width line while preserving view counts. A compact extra row is only added when a listing type does not provide native metadata slots.
 
 On full playlist pages, YouTube places the view count and relative upload age in a `video-info` row rather than the standard metadata row. StayTube recognizes that playlist-specific slot, keeps the view count intact, and replaces only the relative age with the exact local publication timestamp.
 
@@ -49,7 +49,7 @@ The extension only runs on `www.youtube.com` and `m.youtube.com`. It has no anal
 
 ## Verify
 
-The metadata parser and listing-selector regressions use Node's built-in test runner and need no dependencies:
+Run `bash .ci/local.sh` for the full local guard, tests, syntax checks, and package build. The metadata parser and listing-selector regressions also use Node's built-in test runner directly and need no dependencies:
 
 ```sh
 node --test tests/*.test.js
@@ -59,7 +59,7 @@ Three real 1280×800 store screenshots are included under `store-assets/screensh
 
 ## Chrome Web Store release
 
-Run `bash .ci/local.sh` to run local verification and build `dist/staytube-1.0.6-chrome-web-store.zip` with a SHA-256 checksum. The archive includes only manifest-declared runtime files and icons. Use `node scripts/capture-store-screenshots.cjs --verify-theater` for isolated live checks of the size button, `T` shortcut, player width, and YouTube navigation.
+Run `bash .ci/local.sh` to run local verification and build `dist/staytube-1.0.7-chrome-web-store.zip` with a SHA-256 checksum. The archive includes only manifest-declared runtime files and icons. Use `node scripts/capture-store-screenshots.cjs --verify-listings` for browser geometry checks on initial, appended, hydrated, recycled, and playlist rows, including narrow windows. Use `node scripts/capture-store-screenshots.cjs --verify-theater` for isolated live checks of the size button, `T` shortcut, player width, and YouTube navigation.
 
 Open `store-assets/submission-helper.html` for listing copy, permission justifications, and reviewer instructions. See [RELEASE.md](RELEASE.md) for verification evidence and the remaining submission checks. The images in `store-assets/mockups` are design references; capture real screenshots before submission.
 

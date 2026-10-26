@@ -1,12 +1,12 @@
 .staytube-listing-details {
-  align-items: center;
+  align-items: flex-start;
   color: var(--yt-spec-text-secondary, #606060);
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   font-family: Roboto, Arial, sans-serif;
   font-size: 1.2rem;
   font-weight: 400;
-  gap: 0.35em;
+  gap: 0;
   line-height: 1.6rem;
   margin-top: 0.1rem;
   max-width: 100%;
@@ -44,8 +44,31 @@ yt-lockup-view-model .ytLockupMetadataViewModelTextContainer > .staytube-listing
   white-space: normal;
 }
 
-.staytube-published-after-channel::before {
-  content: "\00a0";
+.staytube-native-date-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.staytube-native-date-item {
+  display: block !important;
+  flex-basis: 100% !important;
+  width: 100% !important;
+  max-height: none !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  -webkit-line-clamp: unset !important;
+}
+
+.staytube-native-date-item::before,
+.staytube-native-date-item::after {
+  content: none !important;
+}
+
+.staytube-native-date-separator {
+  display: none !important;
 }
 
 .staytube-unavailable {

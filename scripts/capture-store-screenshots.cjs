@@ -196,6 +196,11 @@ async function main() {
     const page = context.pages()[0] || await context.newPage();
     await page.setViewportSize({ width: 1280, height: 800 });
 
+    if (process.argv.includes("--verify-listings")) {
+      await require("../tests/listing-layout.browser.cjs")(page);
+      return;
+    }
+
     if (process.argv.includes("--verify-theater")) {
       await verifyTheater(page);
       return;
