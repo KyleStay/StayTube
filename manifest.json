@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "StayTube Listing Details",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "minimum_chrome_version": "111",
   "description": "Restores YouTube's classic watch layout and adds exact publication times, channel links, playlist tools, and transcript copying.",
   "icons": {

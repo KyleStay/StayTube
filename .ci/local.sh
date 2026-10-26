@@ -8,6 +8,8 @@ if [[ "${1:-}" == "--check" ]]; then
 fi
 mkdir -p .ci/logs
 ci_log=".ci/logs/$(date -u +%Y%m%dT%H%M%SZ)-$$.log"
-exec > >(tee "$ci_log") 2>&1
-trap 'result=$?; echo "Local CI exit=$result; log=$ci_log"; exit "$result"' EXIT
-sh scripts/build-store-package.sh
+ci_result=0
+sh scripts/build-store-package.sh > "$ci_log" 2>&1 || ci_result=$?
+cat "$ci_log"
+printf 'Local CI exit=%s; log=%s\n' "$ci_result" "$ci_log"
+exit "$ci_result"

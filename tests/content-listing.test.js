@@ -142,6 +142,28 @@ test("watch timestamps are guarded against stale SPA navigation results", () => 
 
 const vm = require("node:vm");
 
+test("native date rehydration refreshes the age while rescans retain the cached native label", () => {
+  let ownedTime = null;
+  const labels = [];
+  const host = {
+    dataset: { staytubeRelativeText: "4 days ago" }, textContent: "5 days ago",
+    getAttribute: () => null, querySelector: () => ownedTime,
+    replaceChildren(time) { ownedTime = time; this.textContent = "5 days ago 12:34 PM"; },
+    classList: { add() {} }
+  };
+  const context = vm.createContext({
+    Core: require("../src/core.js"), findNativeDateHost: () => host,
+    layoutNativeDate() {},
+    makePublishedTime(value, display) { labels.push(display.relativeText); return { classList: { add() {} } }; }
+  });
+  vm.runInContext(source.slice(source.indexOf("  function replaceNativeDate("),
+    source.indexOf("  function clearNativeDateLayout(")), context);
+  context.replaceNativeDate({}, "2026-10-21T12:34:00Z");
+  context.replaceNativeDate({}, "2026-10-21T12:34:00Z");
+  assert.deepEqual(labels, ["5 days ago", "5 days ago"]);
+  assert.equal(host.dataset.staytubeRelativeText, "5 days ago");
+});
+
 test("rescans never mistake a StayTube fallback channel for native metadata", () => {
   const ownLink = {
     href: "https://www.youtube.com/@fallback", textContent: "Fallback channel",

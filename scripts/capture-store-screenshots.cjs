@@ -119,6 +119,58 @@ async function saveScreenshot(page, name) {
   console.log(`Saved ${name} (1280×800)`);
 }
 
+async function verifyTheater(page) {
+  await openYouTube(page, "https://www.youtube.com/watch?v=jNQXAC9IVRw&hl=en");
+  await verifyWatch(page);
+  const player = page.locator("#movie_player");
+  const sizeButton = player.locator(".ytp-size-button");
+  for (const width of [1280, 1600, 900]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await player.hover();
+    await sizeButton.waitFor({ state: "visible", timeout: 15000 });
+    await sizeButton.click();
+    await page.waitForFunction(() => document.querySelector("ytd-watch-flexy")?.hasAttribute("theater"));
+    await page.waitForFunction(() => {
+      const rect = document.querySelector("#movie_player").getBoundingClientRect();
+      return Math.abs(rect.left) <= 2 && Math.abs(rect.width - document.documentElement.clientWidth) <= 2;
+    }, null, { timeout: 15000 });
+    const dimensions = await player.boundingBox();
+    console.log(`Theater button: viewport ${width}px, player ${Math.round(dimensions.width)}px wide`);
+    assert.equal(await page.evaluate(() => Boolean(document.fullscreenElement)), false);
+    if (width === 1280) {
+      const image = await page.screenshot({ scale: "css", animations: "disabled" });
+      fs.writeFileSync(path.join(os.tmpdir(), "staytube-theater-mode.png"), image);
+    }
+    // Leave through YouTube's keyboard handler, with focus on the player.
+    await player.focus();
+    await page.keyboard.press("t");
+    await page.waitForFunction(() => !document.querySelector("ytd-watch-flexy")?.hasAttribute("theater"));
+    await page.keyboard.press("t");
+    await page.waitForFunction(() => document.querySelector("ytd-watch-flexy")?.hasAttribute("theater"));
+    await player.hover();
+    await sizeButton.click();
+    await page.waitForFunction(() => !document.querySelector("ytd-watch-flexy")?.hasAttribute("theater"));
+    console.log(`Theater keyboard and normal-size restoration passed at ${width}px`);
+  }
+  const previousId = new URL(page.url()).searchParams.get("v");
+  const related = page.locator('ytd-watch-next-secondary-results-renderer a[href*="/watch?"]').first();
+  await Promise.all([
+    page.waitForURL(url => url.searchParams.get("v") !== previousId),
+    related.click()
+  ]);
+  const nextId = new URL(page.url()).searchParams.get("v");
+  await page.locator(`.staytube-watch-published[data-video-id="${nextId}"]`).waitFor({ timeout: 30000 });
+  await player.hover();
+  await sizeButton.click();
+  await page.waitForFunction(() => {
+    const watch = document.querySelector("ytd-watch-flexy");
+    const rect = document.querySelector("#movie_player").getBoundingClientRect();
+    return watch?.hasAttribute("theater") && Math.abs(rect.width - document.documentElement.clientWidth) <= 2;
+  }, null, { timeout: 15000 });
+  console.log("Theater mode remains available after YouTube SPA navigation");
+}
+
 async function main() {
   assert.ok(fs.existsSync(runner), "The Chrome Extension Test Runner skill is required.");
   const { chromium } = loadPlaywright();
@@ -143,6 +195,16 @@ async function main() {
     const context = browser.contexts()[0];
     const page = context.pages()[0] || await context.newPage();
     await page.setViewportSize({ width: 1280, height: 800 });
+
+    if (process.argv.includes("--verify-listings")) {
+      await require("../tests/listing-layout.browser.cjs")(page);
+      return;
+    }
+
+    if (process.argv.includes("--verify-theater")) {
+      await verifyTheater(page);
+      return;
+    }
 
     await openYouTube(page, "https://www.youtube.com/results?search_query=NASA+science&hl=en");
     await page.waitForFunction(() => document.querySelectorAll(

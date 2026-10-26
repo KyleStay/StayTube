@@ -111,7 +111,7 @@
       <img src="../assets/icons/icon-128.png" alt="StayTube icon">
       <div>
         <h1>Publish StayTube</h1>
-        <p>StayTube 1.0.5 source handoff</p>
+        <p>StayTube 1.0.7 listing-layout update</p>
       </div>
     </div>
   </header>
@@ -120,8 +120,8 @@
       <a href="#files">1. Files</a><a href="#upload">2. Upload</a><a href="#listing">3. Listing</a><a href="#privacy">4. Privacy</a><a href="#distribution-step">5. Distribution</a><a href="#submit">6. Submit</a>
     </nav>
     <div class="notice">
-      <p><strong>Published runtime unchanged:</strong> the current source matches published 1.0.5. The screenshots and listing tools are available below; this source-only update does not require another extension upload.</p>
-      <p>85 automated source/helper tests passed. The screenshot run checked the restored watch layout, publication timestamps, and transcript control on live YouTube. Complete the remaining behavior checks before submitting. The public GitHub repository provides the homepage, support, and privacy-policy URLs below.</p>
+      <p><strong>Listing-layout update:</strong> version 1.0.7 puts release timestamps on their own line and includes the theater-mode fix. Use the existing store item for this update.</p>
+      <p>87 source/helper tests passed. Live theater checks passed at 900, 1280, and 1600 pixels, including the size button, T shortcut, and video navigation. Complete the remaining behavior checks before submitting. The public GitHub repository provides the homepage, support, and privacy-policy URLs below.</p>
     </div>
 
     <section id="files">
@@ -131,7 +131,7 @@
         <table>
           <thead><tr><th scope="col">Dashboard upload</th><th scope="col">File</th><th scope="col">Status</th></tr></thead>
           <tbody>
-            <tr><td>Extension package</td><td><a href="../dist/staytube-1.0.5-chrome-web-store.zip" download>staytube-1.0.5-chrome-web-store.zip</a></td><td>Build before use · no new runtime publication needed</td></tr>
+            <tr><td>Extension package</td><td><a href="../dist/staytube-1.0.7-chrome-web-store.zip" download>staytube-1.0.7-chrome-web-store.zip</a></td><td>1.0.7 update candidate</td></tr>
             <tr><td>Store icon</td><td><a href="../assets/icons/icon-128.png" download>icon-128.png</a><img src="../assets/icons/icon-128.png" alt="StayTube store icon" width="128" height="128"></td><td>Ready · 128×128 PNG</td></tr>
             <tr><td>Screenshots</td><td><a href="#screenshots">Preview and download the three screenshots</a></td><td>Ready · three 1280×800 PNGs</td></tr>
             <tr><td>Small promotional image</td><td><a href="promotional/small-promo.png" download>small-promo.png</a><img src="promotional/small-promo.png" alt="Small promotional image preview"></td><td>Ready · 440×280 · optional, recommended</td></tr>
@@ -142,12 +142,12 @@
       </div>
       <div class="field">
         <div class="field-head"><h3>ZIP file path</h3><button data-copy="zip-path">Copy path</button></div>
-        <div class="value" id="zip-path">/Users/kyle/Documents/StayTube/dist/staytube-1.0.5-chrome-web-store.zip</div>
+        <div class="value" id="zip-path">/Users/kyle/Documents/StayTube/dist/staytube-1.0.7-chrome-web-store.zip</div>
         <p>On a Mac upload dialog, press Command–Shift–G, paste this path, then select the file.</p>
       </div>
       <div class="field" id="screenshots">
         <h3>Screenshots</h3>
-        <p>The initial included images were captured from StayTube 1.0.4 on live YouTube in a signed-out, disposable Chrome profile. Retaking replaces the preview PNGs and current download bundle using the active source version; the original versioned bundle remains preserved. Upload these PNGs directly to the Store listing tab, with the watch layout first.</p>
+        <p>The current preview images are captured from StayTube 1.0.7 on live YouTube in a signed-out, disposable Chrome profile. Retaking replaces the current PNGs and download bundle; the original 1.0.4 versioned bundle remains preserved. Upload these PNGs directly to the Store listing tab, with the watch layout first.</p>
         <p><a href="screenshots/staytube-store-screenshots.zip" download>Download all three screenshots (ZIP)</a>. Extract the archive and upload the PNGs.</p>
         <div class="screenshot-grid">
           <a href="screenshots/01-classic-watch-layout.png" download><img src="screenshots/01-classic-watch-layout.png" alt="StayTube classic watch page with description and comments below the player" width="1280" height="800">1. Classic watch layout</a>
@@ -174,7 +174,7 @@
       <ol class="steps">
         <li>Open the <a href="https://chrome.google.com/webstore/devconsole/" target="_blank" rel="noopener noreferrer">Chrome Web Store Developer Dashboard</a>.</li>
         <li>Open the existing StayTube item, ID <code>dendmbjihbflekjlbfofggaiipplagap</code> (<a href="https://chromewebstore.google.com/detail/staytube-listing-details/dendmbjihbflekjlbfofggaiipplagap">public listing</a>). Do not create a duplicate listing.</li>
-        <li>The verified published runtime is <strong>1.0.5</strong>. This source-only landing has no new runtime changes to upload. For a later meaningful update, build the normal store ZIP and verify its version exceeds both the published version and all private uploaded drafts.</li>
+        <li>The verified public version is <strong>1.0.5</strong>. Upload the <strong>1.0.7</strong> ZIP in the Package tab after confirming no equal or higher private uploaded draft already exists.</li>
         <li>Keep the authoritative public listing URL and item ID in future release handoffs. Listing screenshots can be reviewed separately from a new runtime package.</li>
       </ol>
       <details><summary>If StayTube already has a store item</summary><p>Open that existing item and upload the ZIP using its Package tab. Do not create a duplicate listing. The uploaded version must be higher than the version already in that item.</p></details>
@@ -201,8 +201,9 @@ StayTube enhances the YouTube interface without ads, accounts, analytics, or a d
 FEATURES
 
 • Keep the description, publication date, and comments below the player, with recommendations beside it.
+• Use full-width theater mode through YouTube's size button or the T shortcut.
 • See the channel name as a visible, clickable link on supported video cards.
-• See the exact publication date and time in your browser's local timezone.
+• See publication dates and times on their own line in your browser's local timezone.
 • Read complete listing titles instead of truncated titles.
 • Add videos to Watch Later from supported thumbnails.
 • Remove videos directly from editable playlist rows.
@@ -348,7 +349,7 @@ For support, questions, or privacy requests, open an issue on the [StayTube supp
       <h2>6. Submit for review</h2>
       <p class="progress" id="progress" role="status" aria-live="polite">0 checks completed</p>
       <div class="checklist">
-        <label><input type="checkbox"> Upload <code>dist/staytube-1.0.5-chrome-web-store.zip</code></label>
+        <label><input type="checkbox"> Upload <code>dist/staytube-1.0.7-chrome-web-store.zip</code></label>
         <label><input type="checkbox"> Upload <code>assets/icons/icon-128.png</code> as the store icon</label>
         <label><input type="checkbox"> Capture and upload real 1280×800 screenshots from the unpacked extension; files in <code>store-assets/mockups</code> are design references only</label>
         <label><input type="checkbox"> Complete listing text, category, language, and desired promotional images</label>

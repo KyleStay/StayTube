@@ -12,7 +12,11 @@
     "enable_web_side_rail",
     "web_side_rail_dismissible_panels",
     "web_watch_fixed_default_panels",
-    "web_watch_provide_undefined_comments"
+    "web_watch_provide_undefined_comments",
+    // The side-rail rollout can disable the native size button and T shortcut
+    // even after the classic watch page is restored.
+    "disable_theater_mode",
+    "web_watch_hide_theater_mode_button_in_single_column"
   ];
   const wrappedConfigs = new WeakSet();
 

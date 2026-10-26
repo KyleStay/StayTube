@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>StayTube listing layout regression fixture</title>
+<style>
+  html { font: 14px Arial,sans-serif; }
+  body { margin: 20px; }
+  ytd-video-renderer, yt-lockup-view-model, ytd-playlist-video-renderer { display:block; width:580px; max-width:100%; margin:16px 0; padding:12px; box-sizing:border-box; border:1px solid #ccc; }
+  #metadata-line, #video-info, .ytContentMetadataViewModelMetadataRow { display:flex; flex-wrap:nowrap; gap:4px; overflow:hidden; white-space:nowrap; }
+  #metadata-line > span + span::before { content:'•'; margin-right:4px; }
+  .ytContentMetadataViewModelMetadataText { display:inline-block; overflow:hidden; white-space:nowrap; }
+  a { color:#065fd4; }
+</style>
+<h1>Listing layout regression fixture</h1>
+<ytd-video-renderer id="initial">
+  <a id="video-title" href="/watch?v=initial0001">Initially rendered classic card</a>
+  <div id="metadata"><a href="/@fixture">Fixture Channel</a><div id="metadata-line"><span class="views">1,234 views</span><span>1 day ago</span></div></div>
+</ytd-video-renderer>
+<yt-lockup-view-model id="modern">
+  <div class="ytLockupMetadataViewModelTextContainer"><a href="/watch?v=modern00001">Initially rendered modern lockup</a><a href="/@fixture">Fixture Channel</a>
+  <yt-content-metadata-view-model><div class="ytContentMetadataViewModelMetadataRow"><span class="ytContentMetadataViewModelMetadataText views">5,678 views</span><span class="ytContentMetadataViewModelDelimiter">•</span><span class="ytContentMetadataViewModelMetadataText"><span>2 days ago</span></span></div></yt-content-metadata-view-model></div>
+</yt-lockup-view-model>
+<ytd-video-renderer id="fallback"><a href="/watch?v=fallback001">Card without native channel/date slots</a><div id="metadata"><span class="views">42 views</span></div></ytd-video-renderer>
+<ytd-playlist-video-renderer id="playlist"><a id="video-title" href="/watch?v=playlist001&list=fixture">Initial playlist row</a><div id="metadata"><a href="/@fixture">Fixture Channel</a><div id="video-info"><span class="views">321 views</span><span>1 day ago</span></div></div><div id="menu"></div></ytd-playlist-video-renderer>
+<div id="appended"></div><div id="hydrated"></div>
+</html>

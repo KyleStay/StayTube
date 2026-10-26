@@ -334,7 +334,9 @@
     if (!host) return false;
 
     const ageLabel = host.getAttribute("aria-label") || host.textContent?.trim() || "";
-    const relativeText = host.dataset.staytubeRelativeText || host.textContent?.trim() || ageLabel;
+    const relativeText = host.querySelector(".staytube-native-published")
+      ? host.dataset.staytubeRelativeText || ageLabel
+      : ageLabel;
     host.dataset.staytubeRelativeText = relativeText;
     const time = makePublishedTime(value, {
       unit: Core.relativeAgeUnit(relativeText),
@@ -344,7 +346,34 @@
     time.classList.add("staytube-native-published");
     host.replaceChildren(time);
     host.classList.add("staytube-native-date-host");
+    layoutNativeDate(card, host);
     return true;
+  }
+
+  function clearNativeDateLayout(card) {
+    for (const name of ["staytube-native-date-row", "staytube-native-date-item", "staytube-native-date-separator"]) {
+      card.querySelectorAll(`.${name}`).forEach(element => element.classList.remove(name));
+    }
+  }
+
+  function layoutNativeDate(card, host) {
+    clearNativeDateLayout(card);
+    const row = host.closest([
+      "#metadata-line", "#video-info", ".ytContentMetadataViewModelMetadataRow",
+      ".yt-lockup-metadata-view-model__metadata"
+    ].join(","));
+    if (!row || !card.contains(row)) return;
+    let item = host;
+    while (item.parentElement && item.parentElement !== row) item = item.parentElement;
+    row.classList.add("staytube-native-date-row");
+    item.classList.add("staytube-native-date-item");
+    // Current lockups use separate delimiter elements; classic cards use a
+    // pseudo-element on the date item. Keep the views and channel untouched.
+    for (const sibling of [item.previousElementSibling, item.nextElementSibling]) {
+      if (sibling?.matches(".ytContentMetadataViewModelDelimiter") || /^[•·]$/.test(sibling?.textContent?.trim() || "")) {
+        sibling.classList.add("staytube-native-date-separator");
+      }
+    }
   }
 
   function render(card, videoId, metadata, error = null) {
@@ -362,9 +391,6 @@
     const published = publishedIsNative ? null : makePublishedTime(metadata?.publishedAt);
 
     if (channel) container.append(channel);
-    if (channel && published) {
-      published.classList.add("staytube-published-after-channel");
-    }
     if (published) container.append(published);
 
     const channelAvailable = channelIsNative || Boolean(channel);
@@ -875,11 +901,16 @@
       const channelCanMoveToNativeSlot = Boolean(
         existingContainer.querySelector(":scope > .staytube-channel") && findExistingChannel(card)?.element
       );
-      if (dateCanMoveToNativeSlot || channelCanMoveToNativeSlot) enrichCard(card);
+      const nativeDateNeedsRepair = Boolean(
+        metadataCache.has(videoId) && !existingContainer.querySelector(":scope > .staytube-published")
+        && !card.querySelector(".staytube-native-published") && findNativeDateHost(card)
+      );
+      if (dateCanMoveToNativeSlot || channelCanMoveToNativeSlot || nativeDateNeedsRepair) enrichCard(card);
       return;
     }
 
     card.querySelectorAll(":scope .staytube-listing-details").forEach((element) => element.remove());
+    clearNativeDateLayout(card);
     card.querySelectorAll(":scope .staytube-native-date-host").forEach((element) => {
       element.replaceChildren();
       element.classList.remove("staytube-native-date-host");
@@ -1464,7 +1495,7 @@
   function isStayTubeMutationTarget(node) {
     return node.nodeType === Node.ELEMENT_NODE && Boolean(node.closest([
       ".staytube-listing-details",
-      ".staytube-native-date-host",
+      ".staytube-native-published",
       ".staytube-watch-published",
       ".staytube-copy-transcript",
       ".staytube-playlist-remove",
