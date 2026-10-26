@@ -14,7 +14,9 @@ Treat YouTube listings as continuously changing rather than complete at initial 
 
 All CI runs locally. Future agents must not use GitHub-hosted CI or consume
 GitHub Actions credits. Never dispatch, rerun, enable, or add hosted workflows.
-Use `bash .ci/local.sh`; `--check` runs only the guard and syntax check.
-Original workflow references belong outside `.github/workflows`. Preserve tests
-and report unavailable platforms. Do not register self-hosted runners or create
-CI credentials. Keep security settings and branch protection unchanged.
+Use `bash .ci/local.sh`; `--check` verifies guard and syntax only. Preserve all
+existing checks and report unavailable platforms. Original workflow references
+belong in `.ci/archived-workflows/`, outside GitHub's active workflow directory.
+Do not register self-hosted runners, create CI credentials, or change security
+settings or branch protection. Publishing/deployment needs a separately approved
+local delivery path; CI verification must never deploy or upload artifacts.
