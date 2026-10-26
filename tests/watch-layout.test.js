@@ -86,6 +86,31 @@ test("existing and nonconfigurable config objects keep native method semantics",
   assert.equal(context.yt.config_.client, "WEB");
 });
 
+test("theater remains available when the rollout disables it, including on navigation", () => {
+  const harness = layoutContext();
+  vm.runInContext(source, harness.context);
+  vm.runInContext(bootstrap, harness.context);
+  const page = { theater: false };
+  harness.setPage(page);
+  for (const key of ["EXPERIMENT_FLAGS", "EXPERIMENTS_FORCED_FLAGS"]) {
+    harness.context.ytcfg.set(key, {
+      disable_theater_mode: true,
+      web_watch_hide_theater_mode_button_in_single_column: true,
+      web_watch_force_start_in_theater_mode: false
+    });
+    const flags = harness.context.ytcfg.get(key);
+    assert.equal(flags.disable_theater_mode, false);
+    assert.equal(flags.web_watch_hide_theater_mode_button_in_single_column, false);
+    assert.equal(flags.web_watch_force_start_in_theater_mode, false);
+  }
+  harness.events.get("yt-navigate-finish")();
+  assert.equal(page.theater, false, "restoration must preserve the user's selected size");
+  page.theater = true;
+  harness.events.get("yt-page-data-updated")();
+  harness.notify();
+  assert.equal(page.theater, true, "rescans must not turn theater mode off");
+});
+
 test("server-supplied side menus reset through native properties on hydration and navigation", () => {
   const harness = layoutContext();
   vm.runInContext(source, harness.context);

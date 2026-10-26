@@ -4,6 +4,7 @@ A small Manifest V3 browser extension that adds details and shortcuts to YouTube
 
 - A channel name that is always visible and clickable.
 - The classic desktop watch layout, with the description, publication date, and comments below the player and recommendations beside it.
+- Native full-width theater mode, using YouTube's size button or the `T` shortcut, including when YouTube's layout experiment disables it.
 - The video's exact published date and time, displayed in your local timezone.
 - Complete listing titles that wrap naturally instead of being truncated with an ellipsis.
 - A direct one-click Watch Later button when a supported thumbnail is hovered or keyboard-focused.
@@ -58,7 +59,7 @@ Three real 1280×800 store screenshots are included under `store-assets/screensh
 
 ## Chrome Web Store release
 
-Run `sh scripts/build-store-package.sh` to run the tests, check JavaScript syntax, and build `dist/staytube-1.0.5-chrome-web-store.zip` with a SHA-256 checksum. The archive includes only manifest-declared runtime files and icons.
+Run `bash .ci/local.sh` to run local verification and build `dist/staytube-1.0.6-chrome-web-store.zip` with a SHA-256 checksum. The archive includes only manifest-declared runtime files and icons. Use `node scripts/capture-store-screenshots.cjs --verify-theater` for isolated live checks of the size button, `T` shortcut, player width, and YouTube navigation.
 
 Open `store-assets/submission-helper.html` for listing copy, permission justifications, and reviewer instructions. See [RELEASE.md](RELEASE.md) for verification evidence and the remaining submission checks. The images in `store-assets/mockups` are design references; capture real screenshots before submission.
 
